@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Silhouette Master Web Pro v10.3</title>
+    <title>Silhouette Master Web Pro v10.5</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -15,9 +15,9 @@
         <button class="mode-btn" id="nav-play" onclick="switchMode('play')">▶ PLAY</button>
     </div>
     <div class="nav-right">
-        <label class="mode-btn folder-btn">📁 FOLDER<input type="file" webkitdirectory onchange="handleFolder(this)"></label>
-        <button class="mode-btn save-btn" onclick="saveProject()">💾 SAVE JSON</button>
-        <label class="mode-btn load-btn">📂 LOAD JSON<input type="file" accept=".json" onchange="loadProject(this)"></label>
+        <button class="mode-btn folder-btn" onclick="requestDirectoryAccess()">📁 フォルダ接続</button>
+        <button class="mode-btn save-btn" onclick="saveConfig()">💾 設定保存</button>
+        <label class="mode-btn load-btn">📂 設定読込<input type="file" accept=".json" onchange="loadConfig(this)"></label>
     </div>
 </nav>
 
@@ -33,6 +33,7 @@
             <button class="small-btn" onclick="bulkColor(true)">すべてカラー</button>
             <button class="small-btn" onclick="bulkColor(false)">すべてシルエット</button>
         </div>
+        <div id="file-status" style="color: #555; font-size: 12px;">フォルダ未接続</div>
     </div>
     <div id="grid" class="grid-container"></div>
 </div>
@@ -41,7 +42,7 @@
     <div class="stage">
         <div class="play-info" id="play-info">QUESTION 1 / -</div>
         <div class="canvas-box">
-            <img id="quiz-img" src="" alt="Quiz Image">
+            <img id="quiz-img" src="" alt="">
         </div>
         <div class="play-controls">
             <button class="btn-play btn-speed" onclick="startAnim(1)">爆速 (1)</button>
@@ -49,7 +50,6 @@
             <button class="btn-play btn-speed" onclick="startAnim(3)">低速 (3)</button>
             <button class="btn-play btn-reveal" onclick="reveal()">★正解 (Space)</button>
         </div>
-        <div class="fs-hint">[F] Fullscreen | [Arrows] Navigate | [ESC] Config</div>
     </div>
 </div>
 
