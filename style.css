@@ -1,0 +1,179 @@
+:root {
+    --bg: #1a1b1f;
+    --header: #111;
+    --card: #2d2e32;
+    --gold: #ebcb8b;
+    --accent: #bf9b30;
+    --text: #eceff4;
+    --cyan: #88c0d0;
+    --green: #4ae885;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Urbanist', sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+/* NAVIGATION */
+nav {
+    background: var(--header);
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.mode-btn {
+    background: none;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 8px 18px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-right: 10px;
+    transition: 0.3s;
+}
+
+.mode-btn.active, .mode-btn:hover {
+    background: var(--gold);
+    color: #111;
+}
+
+.save-btn, .load-btn { border-color: var(--green); color: var(--green); }
+.save-btn:hover, .load-btn:hover { background: var(--green); color: #111; }
+
+input[type="file"] { display: none; }
+
+/* CONFIG PAGE */
+.page { padding: 30px; }
+
+.control-panel {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    border: 1px solid #444;
+}
+
+.speed-input {
+    background: #111;
+    border: 1px solid #444;
+    color: var(--gold);
+    padding: 5px;
+    border-radius: 4px;
+    width: 60px;
+    text-align: center;
+}
+
+.small-btn {
+    background: none;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+/* GRID & CARDS */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.card {
+    background: #3b4252;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    cursor: grab;
+    border: 2px solid transparent;
+}
+
+.card img {
+    width: 100%;
+    height: 110px;
+    object-fit: contain;
+    background: #000;
+    border-radius: 4px;
+    margin: 8px 0;
+    pointer-events: none;
+}
+
+.card-num { color: var(--gold); font-weight: bold; }
+
+/* PLAY MODE */
+.stage {
+    height: calc(100vh - 150px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.canvas-box {
+    width: 1200px;
+    height: 600px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    border: 4px solid var(--gold);
+}
+
+#quiz-img {
+    height: 80%;
+    position: absolute;
+    top: 10%;
+    left: 110%; /* 初期位置: 画面外右 */
+    transition: filter 0.3s ease;
+}
+
+.is-silhouette { filter: brightness(0) !important; }
+
+@keyframes slideLeft {
+    from { left: 110%; }
+    to { left: -110%; }
+}
+
+.animating {
+    animation: slideLeft var(--dur) linear 1 forwards;
+}
+
+.play-info {
+    color: var(--gold);
+    font-size: 42px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.play-controls {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+}
+
+.btn-play {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-speed { background: var(--gold); color: #111; }
+.btn-reveal { background: var(--cyan); color: #111; margin-left: 30px; }
+
+.fs-hint { margin-top: 20px; color: #555; font-size: 12px; }
