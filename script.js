@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 // --- アクセス制限 ---
 const SECRET_PASS = "ito-luxury-2026";
+=======
+// --- 簡易アクセス制限 (v10.10) ---
+const SECRET_PASS = "ongy"; // ここに好きな合言葉を設定してください
+>>>>>>> c66a1ba388c4e1ea0f12b0e962d61ce04b792535
 
 if (sessionStorage.getItem("auth") !== "true") {
     const input = prompt("【Silhouette Master Pro】\nアクセスコードを入力してください：");
