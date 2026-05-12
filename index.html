@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -66,14 +68,32 @@
                 <button class="small-btn sound-test-btn" id="sound-test-bgm" onclick="testSound('bgm')">▶</button>
                 <button class="small-btn sound-clear-btn" onclick="clearCustomSound('bgm')">✕</button>
             </div>
-            <div class="sound-slot" data-slot="start">
-                <span class="sound-label">⏩ スタート</span>
-                <span class="sound-file-name" id="sound-name-start">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-start" min="0" max="100" value="50" oninput="updateVolume('start', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-start">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('start', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-start" onclick="testSound('start')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('start')">✕</button>
+            <div class="sound-slot" data-slot="start1">
+                <span class="sound-label">⚡ 爆速</span>
+                <span class="sound-file-name" id="sound-name-start1">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-start1" min="0" max="100" value="50" oninput="updateVolume('start1', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-start1">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('start1', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-start1" onclick="testSound('start1')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('start1')">✕</button>
+            </div>
+            <div class="sound-slot" data-slot="start2">
+                <span class="sound-label">⏩ 中速</span>
+                <span class="sound-file-name" id="sound-name-start2">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-start2" min="0" max="100" value="50" oninput="updateVolume('start2', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-start2">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('start2', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-start2" onclick="testSound('start2')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('start2')">✕</button>
+            </div>
+            <div class="sound-slot" data-slot="start3">
+                <span class="sound-label">🐢 低速</span>
+                <span class="sound-file-name" id="sound-name-start3">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-start3" min="0" max="100" value="50" oninput="updateVolume('start3', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-start3">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('start3', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-start3" onclick="testSound('start3')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('start3')">✕</button>
             </div>
             <div class="sound-slot" data-slot="reveal">
                 <span class="sound-label">🎉 正解</span>
@@ -93,6 +113,19 @@
                 <button class="small-btn sound-test-btn" id="sound-test-countdown" onclick="testSound('countdown')">▶</button>
                 <button class="small-btn sound-clear-btn" onclick="clearCustomSound('countdown')">✕</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Remote Control -->
+    <div class="remote-section">
+        <div class="remote-header">
+            <h3 class="setlist-title">📱 リモコン</h3>
+            <span class="remote-status" id="remote-status">未接続</span>
+        </div>
+        <div class="remote-body">
+            <button class="small-btn" id="remote-start-btn" onclick="initRemote()">接続を開始</button>
+            <div id="remote-qr" class="remote-qr hidden"></div>
+            <p class="remote-note hidden" id="remote-note"></p>
         </div>
     </div>
 

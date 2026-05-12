@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Remote Controller</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a12;
+            color: #fff;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #12121e;
+            border-bottom: 1px solid #222;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .status-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            background: #555;
+            transition: background 0.3s;
+        }
+        .status-dot.connected { background: #8aff2d; box-shadow: 0 0 8px #8aff2d; }
+        .status-text { color: #888; }
+
+        .info-panel {
+            padding: 12px 16px;
+            background: #12121e;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .info-phase {
+            font-size: 11px;
+            color: #888;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .info-main {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--cat-color, #ff2d8a);
+            margin: 4px 0;
+        }
+        .info-sub {
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 16px;
+            justify-content: center;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-row.triple > .btn { flex: 1; }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 20px 12px;
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:active { transform: scale(0.95); opacity: 0.8; }
+        .btn:disabled { opacity: 0.25; pointer-events: none; }
+
+        .btn-advance {
+            background: linear-gradient(135deg, #ff2d8a, #ff6b3d);
+            color: #fff;
+            font-size: 22px;
+            padding: 28px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .btn-reveal {
+            background: linear-gradient(135deg, #ffe42d, #ff8a2d);
+            color: #1a1a2e;
+            font-size: 20px;
+            padding: 24px;
+        }
+
+        .btn-speed {
+            background: #1a1a2e;
+            color: #00e5ff;
+            border: 2px solid #00e5ff33;
+            font-size: 15px;
+            padding: 16px;
+        }
+
+        .btn-nav {
+            background: #1a1a2e;
+            color: #fff;
+            border: 2px solid #333;
+            font-size: 20px;
+            padding: 18px;
+        }
+
+        .btn-pause {
+            background: #1a1a2e;
+            color: #a78bfa;
+            border: 2px solid #a78bfa33;
+        }
+
+        .connect-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 32px;
+        }
+        .connect-screen h1 { font-size: 20px; color: #ff2d8a; }
+        .connect-screen p { color: #888; font-size: 14px; text-align: center; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #333;
+            border-top-color: #ff2d8a;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="status-bar">
+    <div>
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text" id="status-text">接続中...</span>
+    </div>
+    <span style="color:#555; font-size:12px;">REMOTE</span>
+</div>
+
+<div class="connect-screen" id="connect-screen">
+    <h1>SILHOUETTE QUIZ</h1>
+    <div class="spinner"></div>
+    <p>PC に接続中...</p>
+    <p id="connect-error" style="color:#ff2d8a;" class="hidden"></p>
+</div>
+
+<div class="info-panel hidden" id="info-panel">
+    <div class="info-phase" id="info-phase">OPENING</div>
+    <div class="info-main" id="info-main">—</div>
+    <div class="info-sub" id="info-sub"></div>
+</div>
+
+<div class="controls hidden" id="controls">
+    <!-- Show phase: advance button -->
+    <div id="ctrl-show">
+        <button class="btn btn-advance" onclick="send('advance')">NEXT ▶</button>
+    </div>
+
+    <!-- Quiz phase: all controls -->
+    <div id="ctrl-quiz" class="hidden">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn btn-reveal" onclick="send('reveal')">★ 正解</button>
+            <div class="btn-row triple" id="speed-row">
+                <button class="btn btn-speed" onclick="send('start1')">⚡ 爆速</button>
+                <button class="btn btn-speed" onclick="send('start2')">⏩ 中速</button>
+                <button class="btn btn-speed" onclick="send('start3')">🐢 低速</button>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-nav" onclick="send('prev')">◀ 前</button>
+                <button class="btn btn-pause" onclick="send('pause')" id="btn-pause-remote">⏸</button>
+                <button class="btn btn-nav" onclick="send('next')">次 ▶</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const hostId = params.get('id');
+
+let conn = null;
+let currentState = {};
+
+if (!hostId) {
+    document.getElementById('connect-error').textContent = 'IDが指定されていません';
+    document.getElementById('connect-error').classList.remove('hidden');
+    document.querySelector('.spinner').style.display = 'none';
+} else {
+    connectToHost();
+}
+
+function connectToHost() {
+    const peer = new Peer();
+
+    peer.on('open', () => {
+        conn = peer.connect(hostId, { reliable: true });
+
+        conn.on('open', () => {
+            document.getElementById('connect-screen').classList.add('hidden');
+            document.getElementById('info-panel').classList.remove('hidden');
+            document.getElementById('controls').classList.remove('hidden');
+            document.getElementById('status-dot').classList.add('connected');
+            document.getElementById('status-text').textContent = '接続済み';
+        });
+
+        conn.on('data', (data) => {
+            if (data.type === 'state') updateUI(data);
+        });
+
+        conn.on('close', () => {
+            document.getElementById('status-dot').classList.remove('connected');
+            document.getElementById('status-text').textContent = '切断されました';
+        });
+    });
+
+    peer.on('error', (err) => {
+        document.getElementById('connect-error').textContent = '接続失敗: ' + err.type;
+        document.getElementById('connect-error').classList.remove('hidden');
+        document.querySelector('.spinner').style.display = 'none';
+    });
+}
+
+function send(cmd) {
+    if (conn && conn.open) conn.send(cmd);
+}
+
+function updateUI(state) {
+    currentState = state;
+    const infoPhase = document.getElementById('info-phase');
+    const infoMain = document.getElementById('info-main');
+    const infoSub = document.getElementById('info-sub');
+    const ctrlShow = document.getElementById('ctrl-show');
+    const ctrlQuiz = document.getElementById('ctrl-quiz');
+    const speedRow = document.getElementById('speed-row');
+    const pauseBtn = document.getElementById('btn-pause-remote');
+
+    if (state.catColor) {
+        document.getElementById('info-main').style.color = state.catColor;
+    }
+
+    if (state.phase !== 'quiz') {
+        infoPhase.textContent = state.phase === 'opening' ? 'OPENING' : state.phase === 'category' ? 'CATEGORY' : 'ENDING';
+        infoMain.textContent = state.phase === 'opening' ? 'SILHOUETTE QUIZ' : state.phase === 'ending' ? 'FINISH!' : (state.category || '—');
+        infoSub.textContent = '';
+        ctrlShow.classList.remove('hidden');
+        ctrlQuiz.classList.add('hidden');
+
+        const advBtn = ctrlShow.querySelector('.btn-advance');
+        if (state.phase === 'opening') advBtn.textContent = 'START ▶';
+        else if (state.phase === 'category') advBtn.textContent = 'READY ▶';
+        else advBtn.textContent = 'CONFIG に戻る';
+    } else {
+        infoPhase.textContent = state.mode === 'static' ? 'じっくり観察' : 'スライド';
+        infoMain.textContent = state.category || '—';
+        infoSub.textContent = state.totalQ ? `Q${state.question} / ${state.totalQ}` : '';
+        ctrlShow.classList.add('hidden');
+        ctrlQuiz.classList.remove('hidden');
+        speedRow.style.display = state.mode === 'static' ? 'none' : '';
+        pauseBtn.textContent = state.paused ? '▶' : '⏸';
+    }
+}
+</script>
+</body>
+</html>

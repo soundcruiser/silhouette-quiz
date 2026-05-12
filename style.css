@@ -1337,6 +1337,51 @@ body.is-playing nav {
     color: var(--cyan);
 }
 
+/* ===== REMOTE CONTROL ===== */
+.remote-section {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.remote-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.remote-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.remote-status.connected {
+    color: #8aff2d;
+    text-shadow: 0 0 8px rgba(138, 255, 45, 0.4);
+}
+.remote-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.remote-qr {
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    display: inline-block;
+}
+.remote-qr svg { display: block; width: 160px; height: 160px; }
+.remote-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.5;
+    word-break: break-all;
+}
+.hidden { display: none !important; }
+
 /* ===== SELECT ===== */
 select.mode-btn {
     background-color: var(--bg);

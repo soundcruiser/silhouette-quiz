@@ -59,7 +59,9 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 const customSounds = {
     bgm:       { audio: null, fileName: null, volume: 0.3 },
-    start:     { audio: null, fileName: null, volume: 0.5 },
+    start1:    { audio: null, fileName: null, volume: 0.5 },
+    start2:    { audio: null, fileName: null, volume: 0.5 },
+    start3:    { audio: null, fileName: null, volume: 0.5 },
     reveal:    { audio: null, fileName: null, volume: 0.5 },
     countdown: { audio: null, fileName: null, volume: 0.5 }
 };
@@ -101,9 +103,10 @@ function playRevealSound() {
     });
 }
 
-function playStartSound() {
-    const v = getVolume('start');
-    playCustomOrDefault('start', () => {
+function playStartSound(speedNum) {
+    const slot = 'start' + (speedNum || 2);
+    const v = getVolume(slot);
+    playCustomOrDefault(slot, () => {
         playTone(330, 0.08, 'square', v * 0.16);
     });
 }
@@ -188,8 +191,8 @@ function testSound(slot) {
         btn.classList.add('playing');
         btn.textContent = '■';
         previewAudio.onended = () => { btn.classList.remove('playing'); btn.textContent = '▶'; previewAudio = null; };
-    } else if (slot === 'start') {
-        playStartSound();
+    } else if (slot === 'start1' || slot === 'start2' || slot === 'start3') {
+        playStartSound(parseInt(slot.charAt(5)));
     } else if (slot === 'reveal') {
         playRevealSound();
     } else if (slot === 'countdown') {
@@ -213,7 +216,7 @@ function stopAllPreviews() {
         previewAudio.currentTime = 0;
         previewAudio = null;
     }
-    for (const slot of ['bgm', 'start', 'reveal', 'countdown']) {
+    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown']) {
         const btn = document.getElementById('sound-test-' + slot);
         if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; }
     }
@@ -560,6 +563,7 @@ function enterShowPhase(phase) {
         renderEnding();
         btnShowAdvance.textContent = 'CONFIG に戻る';
     }
+    sendRemoteState();
 }
 
 function advanceShow() {
@@ -732,6 +736,7 @@ async function loadQuiz() {
     quizImg.style.visibility = 'visible';
     quizLoading = false;
     hideShowOverlay();
+    sendRemoteState();
 }
 
 function startAnim(speedNum) {
@@ -752,14 +757,14 @@ function startAnim(speedNum) {
     const countdownOn = document.getElementById('countdown-toggle').checked;
     const countdownSec = parseInt(document.getElementById('countdown-sec').value) || 3;
     if (countdownOn && countdownSec > 0) {
-        runCountdown(countdownSec, () => executeAnim(speedNum));
+        runCountdown(countdownSec, () => executeAnim(speedNum), speedNum);
     } else {
-        playStartSound();
+        playStartSound(speedNum);
         executeAnim(speedNum);
     }
 }
 
-function runCountdown(seconds, callback) {
+function runCountdown(seconds, callback, speedNum) {
     animState.countingDown = true;
     const overlay = document.getElementById('countdown-overlay');
     const numEl = document.getElementById('countdown-number');
@@ -779,7 +784,7 @@ function runCountdown(seconds, callback) {
         if (remaining <= 0) {
             overlay.classList.remove('visible');
             animState.countingDown = false;
-            playStartSound();
+            playStartSound(speedNum);
             callback();
             return;
         }
@@ -894,6 +899,7 @@ function reveal() {
     timerDisplay.textContent = '';
 
     spawnParticles();
+    sendRemoteState();
 }
 
 function spawnParticles() {
@@ -991,7 +997,9 @@ function saveConfig() {
         },
         sounds: {
             bgm:       { file: customSounds.bgm.fileName,       volume: customSounds.bgm.volume },
-            start:     { file: customSounds.start.fileName,     volume: customSounds.start.volume },
+            start1:    { file: customSounds.start1.fileName,    volume: customSounds.start1.volume },
+            start2:    { file: customSounds.start2.fileName,    volume: customSounds.start2.volume },
+            start3:    { file: customSounds.start3.fileName,    volume: customSounds.start3.volume },
             reveal:    { file: customSounds.reveal.fileName,    volume: customSounds.reveal.volume },
             countdown: { file: customSounds.countdown.fileName, volume: customSounds.countdown.volume }
         },
@@ -1033,7 +1041,12 @@ async function loadConfig(input) {
     }
 
     if (config.sounds) {
-        for (const slot of ['bgm', 'start', 'reveal', 'countdown']) {
+        if (config.sounds.start && !config.sounds.start1) {
+            config.sounds.start1 = config.sounds.start;
+            config.sounds.start2 = config.sounds.start;
+            config.sounds.start3 = config.sounds.start;
+        }
+        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown']) {
             const saved = config.sounds[slot];
             if (!saved) continue;
             const sObj = typeof saved === 'object' ? saved : { file: saved, volume: 0.5 };
@@ -1236,3 +1249,96 @@ playBottom?.addEventListener('mouseleave', () => {
 
 // --- 10. Auto-restore previous folder on load ---
 restoreRootHandle();
+
+// --- 11. Remote Control (PeerJS) ---
+let remotePeer = null;
+let remoteConn = null;
+
+function initRemote() {
+    if (remotePeer) { remotePeer.destroy(); remotePeer = null; remoteConn = null; }
+
+    const id = 'sq-' + Math.random().toString(36).substr(2, 6);
+    remotePeer = new Peer(id);
+    const statusEl = document.getElementById('remote-status');
+    const qrEl = document.getElementById('remote-qr');
+    const noteEl = document.getElementById('remote-note');
+    const startBtn = document.getElementById('remote-start-btn');
+
+    statusEl.textContent = '準備中...';
+    statusEl.className = 'remote-status';
+
+    remotePeer.on('open', (peerId) => {
+        statusEl.textContent = '待機中（QRスキャン待ち）';
+        startBtn.textContent = 'リセット';
+
+        const base = window.location.protocol === 'file:'
+            ? null
+            : window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
+        const remoteUrl = base
+            ? `${base}/remote.html?id=${peerId}`
+            : null;
+
+        const qr = qrcode(0, 'M');
+        qr.addData(remoteUrl || peerId);
+        qr.make();
+        qrEl.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true });
+        qrEl.classList.remove('hidden');
+
+        if (!base) {
+            noteEl.textContent = `file:// では使用不可。python3 -m http.server 8080 で起動してください。ID: ${peerId}`;
+        } else {
+            noteEl.innerHTML = `<a href="${remoteUrl}" target="_blank" style="color:var(--cyan);word-break:break-all;">${remoteUrl}</a>`;
+        }
+        noteEl.classList.remove('hidden');
+    });
+
+    remotePeer.on('connection', (conn) => {
+        remoteConn = conn;
+        statusEl.textContent = '接続済み ✓';
+        statusEl.className = 'remote-status connected';
+
+        conn.on('data', handleRemoteCommand);
+        conn.on('close', () => {
+            remoteConn = null;
+            statusEl.textContent = '切断されました';
+            statusEl.className = 'remote-status';
+        });
+
+        setTimeout(() => sendRemoteState(), 500);
+    });
+
+    remotePeer.on('error', (err) => {
+        statusEl.textContent = 'エラー: ' + err.type;
+        statusEl.className = 'remote-status';
+    });
+}
+
+function handleRemoteCommand(cmd) {
+    switch (cmd) {
+        case 'advance': advanceShow(); break;
+        case 'reveal': reveal(); break;
+        case 'next': nextQuiz(); break;
+        case 'prev': prevQuiz(); break;
+        case 'start1': startAnim(1); break;
+        case 'start2': startAnim(2); break;
+        case 'start3': startAnim(3); break;
+        case 'pause': togglePause(); break;
+    }
+    setTimeout(() => sendRemoteState(), 200);
+}
+
+function sendRemoteState() {
+    if (!remoteConn || !remoteConn.open) return;
+    const cat = setlist[currentSetIdx];
+    remoteConn.send({
+        type: 'state',
+        phase: showPhase,
+        category: cat?.displayName || '',
+        catColor: cat?.color || '#ff2d8a',
+        question: currentQIdx + 1,
+        totalQ: getCurrentQuestions().length,
+        mode: getCurrentMode(),
+        playing: animState.playing,
+        paused: animState.paused
+    });
+}
