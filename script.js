@@ -1268,27 +1268,28 @@ function initRemote() {
     statusEl.className = 'remote-status';
 
     remotePeer.on('open', (peerId) => {
-        statusEl.textContent = '待機中（QRスキャン待ち）';
+        statusEl.textContent = '待機中';
         startBtn.textContent = 'リセット';
 
-        const base = window.location.protocol === 'file:'
-            ? null
-            : window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
-        const remoteUrl = base
-            ? `${base}/remote.html?id=${peerId}`
+        const isHttp = window.location.protocol.startsWith('http');
+        const base = isHttp
+            ? window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '')
             : null;
+        const remoteUrl = base ? `${base}/remote.html?id=${peerId}` : null;
 
-        const qr = qrcode(0, 'M');
-        qr.addData(remoteUrl || peerId);
-        qr.make();
-        qrEl.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true });
+        let html = `<div class="remote-id-display"><span class="remote-id-label">ID</span><span class="remote-id-value">${peerId}</span></div>`;
+        if (remoteUrl) {
+            const qr = qrcode(0, 'M');
+            qr.addData(remoteUrl);
+            qr.make();
+            html += `<div class="remote-qr-inner">${qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true })}</div>`;
+        }
+        qrEl.innerHTML = html;
         qrEl.classList.remove('hidden');
 
-        if (!base) {
-            noteEl.textContent = `file:// では使用不可。python3 -m http.server 8080 で起動してください。ID: ${peerId}`;
-        } else {
-            noteEl.innerHTML = `<a href="${remoteUrl}" target="_blank" style="color:var(--cyan);word-break:break-all;">${remoteUrl}</a>`;
-        }
+        noteEl.innerHTML = remoteUrl
+            ? `スマホでQRスキャン、または <code>${peerId}</code> を手入力`
+            : `スマホで <a href="https://github.com" target="_blank" style="color:var(--cyan);">remote.html</a> を開き ID を入力`;
         noteEl.classList.remove('hidden');
     });
 

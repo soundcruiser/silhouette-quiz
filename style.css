@@ -1367,12 +1367,39 @@ body.is-playing nav {
     gap: 10px;
 }
 .remote-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.remote-qr svg { display: block; width: 160px; height: 160px; }
+.remote-id-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.remote-id-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+.remote-id-value {
+    font-family: monospace;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--cyan);
+    letter-spacing: 3px;
+    text-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+    user-select: all;
+}
+.remote-qr-inner {
     background: #fff;
     border-radius: 8px;
     padding: 8px;
     display: inline-block;
 }
-.remote-qr svg { display: block; width: 160px; height: 160px; }
 .remote-note {
     font-size: 11px;
     color: var(--text-muted);

@@ -167,9 +167,19 @@
 
 <div class="connect-screen" id="connect-screen">
     <h1>SILHOUETTE QUIZ</h1>
-    <div class="spinner"></div>
-    <p>PC に接続中...</p>
-    <p id="connect-error" style="color:#ff2d8a;" class="hidden"></p>
+    <div id="connect-form">
+        <p style="color:#888; margin-bottom:12px;">PCに表示されたIDを入力</p>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="id-input" placeholder="sq-xxxxxx" autocapitalize="off" autocorrect="off" spellcheck="false"
+                style="flex:1; padding:14px 16px; font-size:18px; font-weight:700; font-family:monospace; border-radius:12px; border:2px solid #333; background:#1a1a2e; color:#00e5ff; text-align:center; outline:none;">
+            <button onclick="manualConnect()" style="padding:14px 20px; font-size:16px; font-weight:800; border:none; border-radius:12px; background:#ff2d8a; color:#fff; cursor:pointer;">接続</button>
+        </div>
+    </div>
+    <div id="connect-loading" class="hidden">
+        <div class="spinner"></div>
+        <p style="margin-top:12px;">接続中...</p>
+    </div>
+    <p id="connect-error" style="color:#ff2d8a; margin-top:12px;" class="hidden"></p>
 </div>
 
 <div class="info-panel hidden" id="info-panel">
@@ -204,16 +214,30 @@
 
 <script>
 const params = new URLSearchParams(location.search);
-const hostId = params.get('id');
+const urlId = params.get('id');
 
+let hostId = null;
 let conn = null;
 let currentState = {};
 
-if (!hostId) {
-    document.getElementById('connect-error').textContent = 'IDが指定されていません';
-    document.getElementById('connect-error').classList.remove('hidden');
-    document.querySelector('.spinner').style.display = 'none';
-} else {
+if (urlId) {
+    hostId = urlId;
+    document.getElementById('connect-form').classList.add('hidden');
+    document.getElementById('connect-loading').classList.remove('hidden');
+    connectToHost();
+}
+
+document.getElementById('id-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') manualConnect();
+});
+
+function manualConnect() {
+    const input = document.getElementById('id-input').value.trim();
+    if (!input) return;
+    hostId = input;
+    document.getElementById('connect-form').classList.add('hidden');
+    document.getElementById('connect-loading').classList.remove('hidden');
+    document.getElementById('connect-error').classList.add('hidden');
     connectToHost();
 }
 
@@ -242,9 +266,10 @@ function connectToHost() {
     });
 
     peer.on('error', (err) => {
+        document.getElementById('connect-form').classList.remove('hidden');
+        document.getElementById('connect-loading').classList.add('hidden');
         document.getElementById('connect-error').textContent = '接続失敗: ' + err.type;
         document.getElementById('connect-error').classList.remove('hidden');
-        document.querySelector('.spinner').style.display = 'none';
     });
 }
 
