@@ -239,10 +239,49 @@ async function getFileUrl(item) {
 }
 
 // --- 1. Directory Access ---
+const DB_NAME = 'silhouette-quiz';
+const DB_STORE = 'handles';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function saveRootHandle(handle) {
+    const db = await openDB();
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put(handle, 'rootDir');
+    return new Promise(r => { tx.oncomplete = r; });
+}
+
+async function restoreRootHandle() {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(DB_STORE, 'readonly');
+        const req = tx.objectStore(DB_STORE).get('rootDir');
+        const handle = await new Promise((resolve, reject) => {
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+        if (!handle) return false;
+        const perm = await handle.requestPermission({ mode: 'read' });
+        if (perm !== 'granted') return false;
+        rootHandle = handle;
+        document.getElementById('file-status').innerText = "✓ " + rootHandle.name;
+        await buildFolderSelector();
+        return true;
+    } catch { return false; }
+}
+
 async function requestDirectoryAccess() {
     try {
         rootHandle = await window.showDirectoryPicker();
         document.getElementById('file-status').innerText = "✓ " + rootHandle.name;
+        await saveRootHandle(rootHandle);
         await buildFolderSelector();
     } catch (err) {
         if (err.name !== 'AbortError') console.error("Access denied", err);
@@ -647,6 +686,8 @@ async function loadQuiz() {
     stageEl.classList.toggle('mode-static', isStatic);
     stageEl.classList.toggle('mode-slide', !isStatic);
 
+    quizImg.style.visibility = 'hidden';
+
     showOverlay.innerHTML = `
         <div class="show-screen show-question-num" style="--cat-color: ${cat.color}">
             <span class="show-qnum">Q${currentQIdx + 1}</span>
@@ -688,6 +729,7 @@ async function loadQuiz() {
     await new Promise(r => setTimeout(r, 1500));
     if (thisId !== loadQuizId) return;
 
+    quizImg.style.visibility = 'visible';
     quizLoading = false;
     hideShowOverlay();
 }
@@ -1191,3 +1233,6 @@ playBottom?.addEventListener('mouseleave', () => {
         playBottom.classList.remove('visible');
     }, 1500);
 });
+
+// --- 10. Auto-restore previous folder on load ---
+restoreRootHandle();
