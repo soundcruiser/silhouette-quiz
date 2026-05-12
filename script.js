@@ -20,7 +20,7 @@ if (sessionStorage.getItem("auth") !== "true") {
 
 // --- State ---
 let rootHandle = null;
-let setlist = []; // [{folder, displayName, color, questions:[{name,fullPath,isColor,handle}]}]
+let setlist = []; // [{folder, displayName, color, mode:'slide'|'static', questions:[{name,fullPath,isColor,handle}]}]
 let currentSetIdx = 0;
 let currentQIdx = 0;
 let editingCategoryIdx = -1;
@@ -52,6 +52,7 @@ const showOverlay = document.getElementById('show-overlay');
 const quizControls = document.getElementById('quiz-controls');
 const showControlsEl = document.getElementById('show-controls');
 const btnShowAdvance = document.getElementById('btn-show-advance');
+const stageEl = document.querySelector('.stage');
 
 // --- Audio (Web Audio API + Custom Sounds) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -300,6 +301,7 @@ async function addFolderToSetlist(folderName) {
         folder: folderName,
         displayName: folderName,
         color: CATEGORY_COLORS[setlist.length % CATEGORY_COLORS.length],
+        mode: 'slide',
         questions
     });
 
@@ -335,10 +337,13 @@ function renderSetlist() {
     setlist.forEach((cat, idx) => {
         const el = document.createElement('div');
         el.className = `setlist-item ${editingCategoryIdx === idx ? 'active-category' : ''}`;
+        const modeLabel = cat.mode === 'static' ? '🔍 じっくり' : '🎬 スライド';
+        const modeCls = cat.mode === 'static' ? 'mode-static-tag' : 'mode-slide-tag';
         el.innerHTML = `
             <span class="setlist-num">${idx + 1}</span>
             <span class="setlist-color-dot" style="background:${cat.color}" onclick="event.stopPropagation(); cycleColor(${idx})" title="色を変更"></span>
             <input class="setlist-name-input" value="${cat.displayName}" onchange="updateDisplayName(${idx}, this.value)" onclick="event.stopPropagation()">
+            <span class="setlist-mode-btn ${modeCls}" onclick="event.stopPropagation(); toggleCategoryMode(${idx})" title="モード切替">${modeLabel}</span>
             <span class="setlist-count">${cat.questions.length}問</span>
             <div class="setlist-actions">
                 <button class="setlist-btn" onclick="event.stopPropagation(); openCategoryDetail(${idx})" title="問題を編集">✎</button>
@@ -354,7 +359,7 @@ function renderSetlist() {
             animation: 200,
             draggable: '.setlist-item',
             ghostClass: 'sortable-ghost',
-            filter: '.setlist-color-dot, .setlist-btn, .setlist-name-input, .btn-remove',
+            filter: '.setlist-color-dot, .setlist-btn, .setlist-name-input, .btn-remove, .setlist-mode-btn',
             preventOnFilter: false,
             onEnd: (evt) => {
                 const oldIdx = evt.oldDraggableIndex;
@@ -379,6 +384,16 @@ function updateDisplayName(idx, name) {
 function cycleColor(idx) {
     const currentColorIdx = CATEGORY_COLORS.indexOf(setlist[idx].color);
     setlist[idx].color = CATEGORY_COLORS[(currentColorIdx + 1) % CATEGORY_COLORS.length];
+    renderSetlist();
+}
+
+function toggleCategoryMode(idx) {
+    setlist[idx].mode = setlist[idx].mode === 'static' ? 'slide' : 'static';
+    renderSetlist();
+}
+
+function setAllModes(mode) {
+    setlist.forEach(cat => cat.mode = mode);
     renderSetlist();
 }
 
@@ -576,10 +591,15 @@ function renderCategoryTitle() {
     const cat = setlist[currentSetIdx];
     const roundNum = currentSetIdx + 1;
     const total = setlist.length;
+    const isStatic = cat.mode === 'static';
+    const modeTag = isStatic
+        ? '<span class="show-cat-mode show-cat-mode-static">🔍 じっくり観察クイズ</span>'
+        : '<span class="show-cat-mode show-cat-mode-slide">🎬 スライドクイズ</span>';
     showOverlay.innerHTML = `
         <div class="show-screen show-category" style="--cat-color: ${cat.color}">
             <div class="show-round-label">Round ${roundNum} / ${total}</div>
             <h1 class="show-cat-name">${cat.displayName}</h1>
+            ${modeTag}
             <div class="show-cat-count">${cat.questions.length} 問</div>
             <div class="show-cat-bar" style="background: ${cat.color}"></div>
         </div>
@@ -610,6 +630,10 @@ function getCurrentQuestions() {
     return setlist[currentSetIdx]?.questions || [];
 }
 
+function getCurrentMode() {
+    return setlist[currentSetIdx]?.mode || 'slide';
+}
+
 async function loadQuiz() {
     const questions = getCurrentQuestions();
     if (questions.length === 0) return;
@@ -618,7 +642,10 @@ async function loadQuiz() {
 
     const thisId = ++loadQuizId;
     const cat = setlist[currentSetIdx];
+    const isStatic = cat.mode === 'static';
     canvasBox.style.setProperty('--cat-color', cat.color);
+    stageEl.classList.toggle('mode-static', isStatic);
+    stageEl.classList.toggle('mode-slide', !isStatic);
 
     showOverlay.innerHTML = `
         <div class="show-screen show-question-num" style="--cat-color: ${cat.color}">
@@ -629,7 +656,6 @@ async function loadQuiz() {
     showOverlay.style.display = 'flex';
     showOverlay.className = 'show-overlay visible';
 
-    // Prepare image behind the overlay so it's ready before reveal
     const item = questions[currentQIdx];
     quizImg.onanimationend = null;
     quizImg.className = '';
@@ -637,10 +663,18 @@ async function loadQuiz() {
     if (thisId !== loadQuizId) return;
     quizImg.src = url;
     quizImg.classList.toggle('is-silhouette', !item.isColor);
-    quizImg.style.left = '0';
-    quizImg.style.transform = 'translateX(110vw)';
-    quizImg.style.animation = '';
     canvasBox.classList.remove('revealed');
+
+    if (isStatic) {
+        quizImg.style.left = '50%';
+        quizImg.style.transform = 'translateX(-50%)';
+        quizImg.style.animation = '';
+    } else {
+        quizImg.style.left = '0';
+        quizImg.style.transform = 'translateX(110vw)';
+        quizImg.style.animation = '';
+    }
+
     progressBar.classList.remove('active');
     progressBar.style.width = '0%';
     progressBar.style.transitionDuration = '0s';
@@ -651,7 +685,6 @@ async function loadQuiz() {
     playInfo.textContent = cat.displayName;
     playCounter.innerHTML = `<span class="play-counter-q">Q${currentQIdx + 1}</span><span class="play-counter-total"> / ${questions.length}</span>`;
 
-    // Wait for Q number display, then reveal
     await new Promise(r => setTimeout(r, 1500));
     if (thisId !== loadQuizId) return;
 
@@ -900,7 +933,7 @@ function prevQuiz() {
 function saveConfig() {
     if (setlist.length === 0) return;
     const config = {
-        version: 4,
+        version: 5,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -924,6 +957,7 @@ function saveConfig() {
             folder: cat.folder,
             displayName: cat.displayName,
             color: cat.color,
+            mode: cat.mode || 'slide',
             questions: cat.questions.map(q => ({ name: q.name, fullPath: q.fullPath, isColor: q.isColor }))
         }))
     };
@@ -998,6 +1032,7 @@ async function loadConfig(input) {
                     folder: saved.folder,
                     displayName: saved.displayName,
                     color: saved.color,
+                    mode: saved.mode || 'slide',
                     questions
                 });
             } catch (e) {
@@ -1116,13 +1151,17 @@ window.addEventListener('keydown', (e) => {
         return;
     }
 
-    // Idle: all controls
+    // Idle: controls depend on mode
     if (e.code === 'Space') { e.preventDefault(); reveal(); }
-    else if (k === '1') startAnim(1);
-    else if (k === '2') startAnim(2);
-    else if (k === '3') startAnim(3);
     else if (e.key === 'ArrowRight') nextQuiz();
     else if (e.key === 'ArrowLeft') prevQuiz();
+
+    if (getCurrentMode() === 'static') return;
+
+    // Slide-only controls
+    if (k === '1') startAnim(1);
+    else if (k === '2') startAnim(2);
+    else if (k === '3') startAnim(3);
     else if (k === 'p') togglePause();
     else if (k === 'r') replayAnim();
 });

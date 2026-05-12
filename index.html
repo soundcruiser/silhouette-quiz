@@ -100,7 +100,11 @@
     <div class="setlist-section">
         <div class="setlist-header">
             <h3 class="setlist-title">セットリスト</h3>
-            <button class="small-btn" onclick="addAllFoldersToSetlist()">全カテゴリ追加</button>
+            <div class="setlist-header-actions">
+                <button class="small-btn mode-bulk-btn" onclick="setAllModes('slide')" title="全カテゴリをスライドに">🎬 全スライド</button>
+                <button class="small-btn mode-bulk-btn" onclick="setAllModes('static')" title="全カテゴリをじっくりに">🔍 全じっくり</button>
+                <button class="small-btn" onclick="addAllFoldersToSetlist()">全カテゴリ追加</button>
+            </div>
         </div>
         <div id="setlist-container" class="setlist-container">
             <div class="setlist-empty" id="setlist-empty">フォルダ接続後、カテゴリをセットリストに追加してください</div>
@@ -178,7 +182,7 @@
         <div class="shortcut-row"><span>スキップ / キャンセル</span><kbd>Esc</kbd></div>
         <div class="shortcut-row"><span>フルスクリーン</span><kbd>F</kbd></div>
         <div class="shortcut-row"><span>ヘルプ表示</span><kbd>H</kbd> / <kbd>?</kbd></div>
-        <p class="help-note">※ カウントダウン中・スライド再生中は ←→ 1 2 3 無効</p>
+        <p class="help-note">※ カウントダウン中・スライド再生中は ←→ 1 2 3 無効<br>※ じっくりモードでは 1 2 3 P R 無効（正解と←→のみ）</p>
     </div>
 </div>
 

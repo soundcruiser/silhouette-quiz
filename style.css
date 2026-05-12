@@ -385,6 +385,33 @@ nav {
     font-size: 11px;
     font-weight: 600;
 }
+.setlist-header-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.setlist-mode-btn {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+    user-select: none;
+}
+.mode-slide-tag {
+    background: rgba(0, 229, 255, 0.15);
+    color: var(--cyan);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+}
+.mode-static-tag {
+    background: rgba(255, 228, 45, 0.15);
+    color: var(--yellow);
+    border: 1px solid rgba(255, 228, 45, 0.3);
+}
+.setlist-mode-btn:hover { opacity: 0.8; }
+.mode-bulk-btn { font-size: 11px; }
 .setlist-item .setlist-color-dot {
     width: 14px;
     height: 14px;
@@ -996,6 +1023,17 @@ body.is-playing nav {
     animation: confetti 1.2s ease-out forwards;
 }
 
+/* ===== STATIC MODE ===== */
+.mode-static .btn-speed,
+.mode-static .btn-pause,
+.mode-static .btn-replay {
+    display: none !important;
+}
+.mode-static .progress-bar,
+.mode-static .timer-display {
+    display: none !important;
+}
+
 /* ===== SHOW OVERLAY (Opening / Category / Ending) ===== */
 .show-overlay {
     position: absolute;
@@ -1135,6 +1173,28 @@ body.is-playing nav {
         0 0 30px color-mix(in srgb, var(--cat-color) 50%, transparent),
         0 4px 20px rgba(0, 0, 0, 0.5);
     animation: showTitleIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.show-cat-mode {
+    display: inline-block;
+    font-size: clamp(14px, 2vw, 20px);
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 4px 18px;
+    border-radius: 20px;
+    margin: 8px 0;
+    animation: showSubIn 0.5s 0.25s ease both;
+}
+.show-cat-mode-slide {
+    background: rgba(0, 229, 255, 0.15);
+    color: var(--cyan);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+}
+.show-cat-mode-static {
+    background: rgba(255, 228, 45, 0.15);
+    color: var(--yellow);
+    border: 1px solid rgba(255, 228, 45, 0.4);
+    text-shadow: 0 0 12px rgba(255, 228, 45, 0.5);
 }
 .show-cat-count {
     font-size: clamp(16px, 2.5vw, 24px);
