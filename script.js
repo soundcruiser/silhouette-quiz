@@ -8,10 +8,10 @@ if (sessionStorage.getItem("auth") !== "true") {
     } else {
         alert("コードが正しくありません。");
         document.body.innerHTML = `
-            <div style="background:#0f1014; color:#f0c855; height:100vh; display:flex; align-items:center; justify-content:center; font-family:'Urbanist',sans-serif;">
-                <div style="text-align:center; border:1.5px solid #f0c855; padding:48px; border-radius:16px;">
+            <div style="background:#0a0a14; color:#ff2d8a; height:100vh; display:flex; align-items:center; justify-content:center; font-family:'Urbanist',sans-serif;">
+                <div style="text-align:center; border:1.5px solid #ff2d8a; padding:48px; border-radius:16px;">
                     <h1 style="font-size:28px; margin:0 0 12px;">ACCESS DENIED</h1>
-                    <p style="color:#8b8f9a; margin:0;">認証が必要です。ページを更新してやり直してください。</p>
+                    <p style="color:#9a9ab0; margin:0;">認証が必要です。ページを更新してやり直してください。</p>
                 </div>
             </div>`;
         throw new Error("Authentication failed");
@@ -20,10 +20,14 @@ if (sessionStorage.getItem("auth") !== "true") {
 
 // --- State ---
 let rootHandle = null;
-let quizData = [];
-let currentIdx = 0;
+let setlist = []; // [{folder, displayName, color, questions:[{name,fullPath,isColor,handle}]}]
+let currentSetIdx = 0;
+let currentQIdx = 0;
+let editingCategoryIdx = -1;
 let objectUrls = [];
 let animState = { playing: false, paused: false, lastSpeed: 2, timerId: null, startTime: 0, elapsed: 0, countingDown: false };
+
+const CATEGORY_COLORS = ['#ff2d8a', '#00e5ff', '#ffe42d', '#8aff2d', '#ff8a2d', '#a78bfa'];
 
 // --- DOM References ---
 const gridEl = document.getElementById('grid');
@@ -34,6 +38,10 @@ const canvasBox = document.getElementById('canvas-box');
 const progressBar = document.getElementById('progress-bar');
 const timerDisplay = document.getElementById('timer-display');
 const helpOverlay = document.getElementById('help-overlay');
+const setlistContainer = document.getElementById('setlist-container');
+const setlistEmpty = document.getElementById('setlist-empty');
+const categoryDetail = document.getElementById('category-detail');
+const categoryDetailName = document.getElementById('category-detail-name');
 
 // --- Audio (Web Audio API) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -82,44 +90,51 @@ async function requestDirectoryAccess() {
     try {
         rootHandle = await window.showDirectoryPicker();
         document.getElementById('file-status').innerText = "✓ " + rootHandle.name;
-
-        const selector = document.createElement('select');
-        selector.className = 'mode-btn';
-        selector.onchange = (e) => loadSpecificFolder(e.target.value);
-
-        const defaultOpt = document.createElement('option');
-        defaultOpt.text = "-- セットを選択 --";
-        selector.appendChild(defaultOpt);
-
-        for await (const entry of rootHandle.values()) {
-            if (entry.kind === 'directory' && !entry.name.startsWith('_')) {
-                const opt = document.createElement('option');
-                opt.value = entry.name;
-                opt.text = "📂 " + entry.name;
-                selector.appendChild(opt);
-            }
-        }
-
-        const panel = document.getElementById('main-panel');
-        const oldSelector = panel.querySelector('select');
-        if (oldSelector) oldSelector.remove();
-        panel.appendChild(selector);
-
+        await buildFolderSelector();
     } catch (err) {
         if (err.name !== 'AbortError') console.error("Access denied", err);
     }
 }
 
-// --- 2. Folder Loading ---
-async function loadSpecificFolder(folderName) {
-    if (!rootHandle || folderName.includes("--")) return;
+async function buildFolderSelector() {
+    const selector = document.createElement('select');
+    selector.className = 'mode-btn';
+    selector.id = 'folder-selector';
+    selector.innerHTML = '<option>-- セットに追加 --</option>';
 
-    const subFolderHandle = await rootHandle.getDirectoryHandle(folderName);
-    quizData = [];
+    for await (const entry of rootHandle.values()) {
+        if (entry.kind === 'directory' && !entry.name.startsWith('_')) {
+            const opt = document.createElement('option');
+            opt.value = entry.name;
+            opt.text = "📂 " + entry.name;
+            selector.appendChild(opt);
+        }
+    }
 
-    for await (const entry of subFolderHandle.values()) {
+    selector.onchange = (e) => {
+        if (e.target.value && !e.target.value.includes('--')) {
+            addFolderToSetlist(e.target.value);
+            e.target.selectedIndex = 0;
+        }
+    };
+
+    const panel = document.getElementById('main-panel');
+    const old = panel.querySelector('#folder-selector');
+    if (old) old.remove();
+    panel.appendChild(selector);
+}
+
+// --- 2. Setlist Management ---
+async function addFolderToSetlist(folderName) {
+    if (!rootHandle) return;
+    if (setlist.find(s => s.folder === folderName)) return;
+
+    const subHandle = await rootHandle.getDirectoryHandle(folderName);
+    const questions = [];
+
+    for await (const entry of subHandle.values()) {
         if (entry.kind === 'file' && /\.(jpe?g|png|webp|gif)$/i.test(entry.name)) {
-            quizData.push({
+            questions.push({
                 name: entry.name,
                 fullPath: `${folderName}/${entry.name}`,
                 isColor: false,
@@ -127,20 +142,121 @@ async function loadSpecificFolder(folderName) {
             });
         }
     }
+    questions.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 
-    quizData.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    currentIdx = 0;
-    renderGrid();
+    setlist.push({
+        folder: folderName,
+        displayName: folderName,
+        color: CATEGORY_COLORS[setlist.length % CATEGORY_COLORS.length],
+        questions
+    });
+
+    renderSetlist();
 }
 
-// --- 3. Grid Rendering ---
+async function addAllFoldersToSetlist() {
+    if (!rootHandle) { alert("先にフォルダを接続してください"); return; }
+    for await (const entry of rootHandle.values()) {
+        if (entry.kind === 'directory' && !entry.name.startsWith('_')) {
+            await addFolderToSetlist(entry.name);
+        }
+    }
+}
+
+function removeFromSetlist(idx) {
+    setlist.splice(idx, 1);
+    if (editingCategoryIdx === idx) closeCategoryDetail();
+    else if (editingCategoryIdx > idx) editingCategoryIdx--;
+    renderSetlist();
+}
+
+function renderSetlist() {
+    if (setlist.length === 0) {
+        setlistEmpty.style.display = 'block';
+    } else {
+        setlistEmpty.style.display = 'none';
+    }
+
+    const items = setlistContainer.querySelectorAll('.setlist-item');
+    items.forEach(el => el.remove());
+
+    setlist.forEach((cat, idx) => {
+        const el = document.createElement('div');
+        el.className = `setlist-item ${editingCategoryIdx === idx ? 'active-category' : ''}`;
+        el.innerHTML = `
+            <span class="setlist-num">${idx + 1}</span>
+            <span class="setlist-color-dot" style="background:${cat.color}" onclick="event.stopPropagation(); cycleColor(${idx})" title="色を変更"></span>
+            <input class="setlist-name-input" value="${cat.displayName}" onchange="updateDisplayName(${idx}, this.value)" onclick="event.stopPropagation()">
+            <span class="setlist-count">${cat.questions.length}問</span>
+            <div class="setlist-actions">
+                <button class="setlist-btn" onclick="event.stopPropagation(); openCategoryDetail(${idx})" title="問題を編集">✎</button>
+                <button class="setlist-btn btn-remove" onclick="event.stopPropagation(); removeFromSetlist(${idx})" title="削除">✕</button>
+            </div>
+        `;
+        setlistContainer.appendChild(el);
+    });
+
+    if (setlistContainer._sortable) setlistContainer._sortable.destroy();
+    if (setlist.length > 0) {
+        setlistContainer._sortable = new Sortable(setlistContainer, {
+            animation: 200,
+            draggable: '.setlist-item',
+            ghostClass: 'sortable-ghost',
+            filter: '.setlist-color-dot, .setlist-btn, .setlist-name-input, .btn-remove',
+            preventOnFilter: false,
+            onEnd: (evt) => {
+                const oldIdx = evt.oldDraggableIndex;
+                const newIdx = evt.newDraggableIndex;
+                if (oldIdx === newIdx) return;
+                const item = setlist.splice(oldIdx, 1)[0];
+                if (!item) return;
+                setlist.splice(newIdx, 0, item);
+                if (editingCategoryIdx === oldIdx) editingCategoryIdx = newIdx;
+                else if (editingCategoryIdx > oldIdx && editingCategoryIdx <= newIdx) editingCategoryIdx--;
+                else if (editingCategoryIdx < oldIdx && editingCategoryIdx >= newIdx) editingCategoryIdx++;
+                renderSetlist();
+            }
+        });
+    }
+}
+
+function updateDisplayName(idx, name) {
+    setlist[idx].displayName = name || setlist[idx].folder;
+}
+
+function cycleColor(idx) {
+    const currentColorIdx = CATEGORY_COLORS.indexOf(setlist[idx].color);
+    setlist[idx].color = CATEGORY_COLORS[(currentColorIdx + 1) % CATEGORY_COLORS.length];
+    renderSetlist();
+}
+
+// --- 3. Category Detail (per-category question grid) ---
+function openCategoryDetail(idx) {
+    editingCategoryIdx = idx;
+    const cat = setlist[idx];
+    categoryDetail.style.display = 'block';
+    categoryDetailName.textContent = `${cat.displayName} (${cat.questions.length}問)`;
+    categoryDetailName.style.color = cat.color;
+    renderGrid();
+    renderSetlist();
+}
+
+function closeCategoryDetail() {
+    editingCategoryIdx = -1;
+    categoryDetail.style.display = 'none';
+    gridEl.innerHTML = '';
+    renderSetlist();
+}
+
 async function renderGrid() {
+    if (editingCategoryIdx < 0 || !setlist[editingCategoryIdx]) return;
     revokeAllUrls();
     gridEl.innerHTML = '';
 
+    const questions = setlist[editingCategoryIdx].questions;
     const fragment = document.createDocumentFragment();
-    for (let i = 0; i < quizData.length; i++) {
-        const item = quizData[i];
+    for (let i = 0; i < questions.length; i++) {
+        const item = questions[i];
         const url = await getFileUrl(item);
         const card = document.createElement('div');
         card.className = `card ${!item.isColor ? 'is-silhouette-preview' : ''}`;
@@ -167,15 +283,17 @@ async function renderGrid() {
         chosenClass: 'sortable-chosen',
         easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
         onEnd: (evt) => {
-            const item = quizData.splice(evt.oldIndex, 1)[0];
-            quizData.splice(evt.newIndex, 0, item);
+            const q = setlist[editingCategoryIdx].questions;
+            const item = q.splice(evt.oldIndex, 1)[0];
+            q.splice(evt.newIndex, 0, item);
             renderGrid();
         }
     });
 }
 
 function toggleCardColor(idx, checked) {
-    quizData[idx].isColor = checked;
+    if (editingCategoryIdx < 0) return;
+    setlist[editingCategoryIdx].questions[idx].isColor = checked;
     const card = gridEl.children[idx];
     card.classList.toggle('is-silhouette-preview', !checked);
     const badge = card.querySelector('.badge');
@@ -184,7 +302,8 @@ function toggleCardColor(idx, checked) {
 }
 
 function bulkColor(val) {
-    quizData.forEach(item => item.isColor = val);
+    if (editingCategoryIdx < 0) return;
+    setlist[editingCategoryIdx].questions.forEach(item => item.isColor = val);
     renderGrid();
 }
 
@@ -195,15 +314,25 @@ function switchMode(mode) {
     document.getElementById('nav-config').classList.toggle('active', mode === 'config');
     document.getElementById('nav-play').classList.toggle('active', mode === 'play');
     document.body.classList.toggle('is-playing', mode === 'play');
-    if (mode === 'play') loadQuiz();
+    if (mode === 'play') {
+        currentSetIdx = 0;
+        currentQIdx = 0;
+        loadQuiz();
+    }
 }
 
-// --- 5. Play Engine ---
+// --- 5. Play Engine (Setlist-aware) ---
+function getCurrentQuestions() {
+    if (setlist.length === 0) return [];
+    return setlist[currentSetIdx]?.questions || [];
+}
+
 async function loadQuiz() {
-    if (quizData.length === 0) return;
+    const questions = getCurrentQuestions();
+    if (questions.length === 0) return;
     resetAnimState();
 
-    const item = quizData[currentIdx];
+    const item = questions[currentQIdx];
     quizImg.onanimationend = null;
     quizImg.className = '';
     quizImg.src = await getFileUrl(item);
@@ -218,12 +347,14 @@ async function loadQuiz() {
     timerDisplay.textContent = '';
     timerDisplay.classList.remove('warning');
 
-    playInfo.innerText = `Q${currentIdx + 1}`;
-    playCounter.textContent = `${currentIdx + 1} / ${quizData.length}`;
+    const cat = setlist[currentSetIdx];
+    playInfo.innerText = `${cat.displayName}  Q${currentQIdx + 1}`;
+    playInfo.style.color = '';
+    playCounter.textContent = `${currentQIdx + 1}/${questions.length}  [${currentSetIdx + 1}/${setlist.length}]`;
 }
 
 function startAnim(speedNum) {
-    if (quizData.length === 0 || animState.countingDown) return;
+    if (getCurrentQuestions().length === 0 || animState.countingDown) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
     resetAnimState();
@@ -320,8 +451,8 @@ function togglePause() {
         quizImg.style.animationPlayState = 'paused';
         progressBar.style.transitionPlayState = 'paused';
         btn.textContent = '▶';
-        btn.style.borderColor = 'var(--green)';
-        btn.style.color = 'var(--green)';
+        btn.style.borderColor = 'var(--lime)';
+        btn.style.color = 'var(--lime)';
     } else {
         animState.paused = false;
         quizImg.style.animationPlayState = 'running';
@@ -349,17 +480,26 @@ function resetAnimState() {
 }
 
 function reveal() {
-    if (quizData.length === 0) return;
+    if (getCurrentQuestions().length === 0) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
     playRevealSound();
     resetAnimState();
 
-    quizImg.classList.remove('animating', 'is-silhouette');
+    quizImg.classList.remove('animating', 'is-silhouette', 'revealed-img');
     quizImg.style.animation = '';
     quizImg.style.left = "50%";
     quizImg.style.transform = "translateX(-50%)";
+
+    void quizImg.offsetWidth;
     quizImg.classList.add('revealed-img');
     canvasBox.classList.add('revealed');
+
+    quizImg.addEventListener('animationend', function onRevealEnd() {
+        quizImg.removeEventListener('animationend', onRevealEnd);
+        quizImg.classList.remove('revealed-img');
+        quizImg.style.left = "50%";
+        quizImg.style.transform = "translateX(-50%)";
+    });
 
     progressBar.classList.remove('active');
     progressBar.style.width = '100%';
@@ -408,34 +548,61 @@ function spawnParticles() {
     }
 }
 
-// --- Navigation ---
+// --- Navigation (Setlist-aware) ---
 function nextQuiz() {
-    currentIdx = (currentIdx + 1) % quizData.length;
+    if (setlist.length === 0) return;
+    const questions = getCurrentQuestions();
+    if (currentQIdx < questions.length - 1) {
+        currentQIdx++;
+    } else if (currentSetIdx < setlist.length - 1) {
+        currentSetIdx++;
+        currentQIdx = 0;
+    } else {
+        currentSetIdx = 0;
+        currentQIdx = 0;
+    }
     loadQuiz();
 }
 
 function prevQuiz() {
-    currentIdx = (currentIdx - 1 + quizData.length) % quizData.length;
+    if (setlist.length === 0) return;
+    if (currentQIdx > 0) {
+        currentQIdx--;
+    } else if (currentSetIdx > 0) {
+        currentSetIdx--;
+        currentQIdx = setlist[currentSetIdx].questions.length - 1;
+    } else {
+        currentSetIdx = setlist.length - 1;
+        currentQIdx = setlist[currentSetIdx].questions.length - 1;
+    }
     loadQuiz();
 }
 
-// --- 6. Config Save/Load ---
+// --- 6. Config Save/Load (Setlist version) ---
 function saveConfig() {
-    if (quizData.length === 0) return;
+    if (setlist.length === 0) return;
     const config = {
-        version: 2,
+        version: 3,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
             document.getElementById('speed3').value
         ],
-        folder: quizData[0].fullPath.split('/')[0],
-        order: quizData.map(d => ({ name: d.name, fullPath: d.fullPath, isColor: d.isColor }))
+        countdown: {
+            enabled: document.getElementById('countdown-toggle').checked,
+            seconds: document.getElementById('countdown-sec').value
+        },
+        setlist: setlist.map(cat => ({
+            folder: cat.folder,
+            displayName: cat.displayName,
+            color: cat.color,
+            questions: cat.questions.map(q => ({ name: q.name, fullPath: q.fullPath, isColor: q.isColor }))
+        }))
     };
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `config_${config.folder}.json`;
+    a.download = `setlist_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
 }
@@ -450,16 +617,56 @@ async function loadConfig(input) {
         document.getElementById('speed2').value = config.speeds[1];
         document.getElementById('speed3').value = config.speeds[2];
     }
-
-    await loadSpecificFolder(config.folder);
-
-    const restoredData = [];
-    for (let saved of config.order) {
-        const found = quizData.find(item => item.fullPath === saved.fullPath);
-        if (found) restoredData.push({ ...found, isColor: saved.isColor });
+    if (config.countdown) {
+        document.getElementById('countdown-toggle').checked = config.countdown.enabled;
+        document.getElementById('countdown-sec').value = config.countdown.seconds;
+        toggleCountdownInput();
     }
-    if (restoredData.length > 0) quizData = restoredData;
-    renderGrid();
+
+    if (config.version >= 3 && config.setlist) {
+        setlist = [];
+        for (const saved of config.setlist) {
+            try {
+                const subHandle = await rootHandle.getDirectoryHandle(saved.folder);
+                const fileHandles = {};
+                for await (const entry of subHandle.values()) {
+                    if (entry.kind === 'file') fileHandles[entry.name] = entry;
+                }
+
+                const questions = [];
+                for (const sq of saved.questions) {
+                    const handle = fileHandles[sq.name];
+                    if (handle) {
+                        questions.push({ name: sq.name, fullPath: sq.fullPath, isColor: sq.isColor, handle });
+                    }
+                }
+
+                setlist.push({
+                    folder: saved.folder,
+                    displayName: saved.displayName,
+                    color: saved.color,
+                    questions
+                });
+            } catch (e) {
+                console.warn(`Folder not found: ${saved.folder}`, e);
+            }
+        }
+        renderSetlist();
+    } else if (config.folder && config.order) {
+        // v2 backward compatibility
+        await addFolderToSetlist(config.folder);
+        const cat = setlist.find(s => s.folder === config.folder);
+        if (cat) {
+            const restoredQ = [];
+            for (const saved of config.order) {
+                const found = cat.questions.find(q => q.fullPath === saved.fullPath);
+                if (found) restoredQ.push({ ...found, isColor: saved.isColor });
+            }
+            if (restoredQ.length > 0) cat.questions = restoredQ;
+        }
+        renderSetlist();
+    }
+
     input.value = '';
 }
 
