@@ -409,6 +409,39 @@ nav {
 }
 .btn-nav:hover { border-color: var(--gold); }
 
+/* ===== COUNTDOWN ===== */
+.countdown-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.countdown-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+.countdown-number {
+    font-size: 120px;
+    font-weight: 800;
+    color: var(--gold);
+    font-family: 'Playfair Display', serif;
+    text-shadow: 0 0 40px rgba(240, 200, 85, 0.5);
+}
+@keyframes countdownPop {
+    0% { transform: scale(1.6); opacity: 0; }
+    40% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0.6; }
+}
+.countdown-number.pop {
+    animation: countdownPop 0.9s ease-out forwards;
+}
+
 /* ===== REVEAL EFFECT ===== */
 @keyframes revealPop {
     0% { transform: translateX(-50%) scale(0.85); opacity: 0.5; }
