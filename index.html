@@ -2,9 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Silhouette Master Web Pro v10.9</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silhouette Master Pro</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
@@ -15,41 +16,70 @@
         <button class="mode-btn" id="nav-play" onclick="switchMode('play')">▶ PLAY</button>
     </div>
     <div class="nav-right" id="nav-actions">
-        <button class="mode-btn folder-btn" onclick="requestDirectoryAccess()">📁 親フォルダ接続</button>
-        <button class="mode-btn save-btn" onclick="saveConfig()">💾 設定保存</button>
-        <label class="mode-btn load-btn">📂 設定読込<input type="file" accept=".json" onchange="loadConfig(this)"></label>
+        <button class="mode-btn folder-btn" onclick="requestDirectoryAccess()">📁 フォルダ接続</button>
+        <button class="mode-btn save-btn" onclick="saveConfig()">💾 保存</button>
+        <label class="mode-btn load-btn">📂 読込<input type="file" accept=".json" onchange="loadConfig(this)"></label>
+        <button class="mode-btn" onclick="toggleHelp()" title="ショートカット一覧">❓</button>
     </div>
 </nav>
 
 <div id="config-mode" class="page">
     <div class="control-panel" id="main-panel">
         <div class="speed-group">
-            <span class="panel-label">速度(s):</span>
-            <input type="number" id="speed1" value="2" class="speed-input">
-            <input type="number" id="speed2" value="5" class="speed-input">
-            <input type="number" id="speed3" value="10" class="speed-input">
+            <span class="panel-label">速度(s)</span>
+            <input type="number" id="speed1" value="2" class="speed-input" min="0.5" step="0.5">
+            <input type="number" id="speed2" value="5" class="speed-input" min="0.5" step="0.5">
+            <input type="number" id="speed3" value="10" class="speed-input" min="0.5" step="0.5">
         </div>
         <div class="bulk-group">
             <button class="small-btn" onclick="bulkColor(true)">すべてカラー</button>
             <button class="small-btn" onclick="bulkColor(false)">すべてシルエット</button>
         </div>
-        <div id="file-status" style="color: var(--cyan); font-size: 12px; font-weight: bold;">フォルダ未接続</div>
-        </div>
+        <div id="file-status">フォルダ未接続</div>
+    </div>
     <div id="grid" class="grid-container"></div>
 </div>
 
 <div id="play-mode" class="page" style="display: none;">
     <div class="stage">
-        <div class="play-info" id="play-info">SELECT A SET</div>
-        <div class="canvas-box">
-            <img id="quiz-img" src="" alt="">
+        <div class="play-header">
+            <div class="play-info" id="play-info">SELECT A SET</div>
+            <div class="play-counter" id="play-counter"></div>
+        </div>
+        <div class="canvas-wrapper">
+            <div class="canvas-box" id="canvas-box">
+                <img id="quiz-img" src="" alt="">
+                <div class="progress-bar" id="progress-bar"></div>
+                <div class="timer-display" id="timer-display"></div>
+            </div>
         </div>
         <div class="play-controls">
+            <button class="btn-play btn-nav" onclick="prevQuiz()">◀</button>
             <button class="btn-play btn-speed" onclick="startAnim(1)">爆速 (1)</button>
             <button class="btn-play btn-speed" onclick="startAnim(2)">中速 (2)</button>
             <button class="btn-play btn-speed" onclick="startAnim(3)">低速 (3)</button>
-            <button class="btn-play btn-reveal" onclick="reveal()">★正解 (Space)</button>
+            <button class="btn-play btn-pause" id="btn-pause" onclick="togglePause()">⏸</button>
+            <button class="btn-play btn-replay" onclick="replayAnim()">↻ リプレイ</button>
+            <button class="btn-play btn-reveal" onclick="reveal()">★ 正解 (Space)</button>
+            <button class="btn-play btn-nav" onclick="nextQuiz()">▶</button>
         </div>
+    </div>
+</div>
+
+<!-- Help Overlay -->
+<div class="help-overlay" id="help-overlay" onclick="toggleHelp()">
+    <div class="help-box" onclick="event.stopPropagation()">
+        <h2>⌨ キーボードショートカット</h2>
+        <div class="shortcut-row"><span>正解を表示</span><kbd>Space</kbd></div>
+        <div class="shortcut-row"><span>爆速スタート</span><kbd>1</kbd></div>
+        <div class="shortcut-row"><span>中速スタート</span><kbd>2</kbd></div>
+        <div class="shortcut-row"><span>低速スタート</span><kbd>3</kbd></div>
+        <div class="shortcut-row"><span>前の問題</span><kbd>←</kbd></div>
+        <div class="shortcut-row"><span>次の問題</span><kbd>→</kbd></div>
+        <div class="shortcut-row"><span>一時停止/再開</span><kbd>P</kbd></div>
+        <div class="shortcut-row"><span>リプレイ</span><kbd>R</kbd></div>
+        <div class="shortcut-row"><span>フルスクリーン</span><kbd>F</kbd></div>
+        <div class="shortcut-row"><span>ヘルプ表示</span><kbd>H / ?</kbd></div>
     </div>
 </div>
 
