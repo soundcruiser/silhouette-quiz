@@ -52,9 +52,10 @@ function playTone(freq, duration, type = 'sine', gain = 0.15) {
 }
 
 function playRevealSound() {
-    playTone(523, 0.15, 'sine', 0.2);
-    setTimeout(() => playTone(659, 0.15, 'sine', 0.2), 100);
-    setTimeout(() => playTone(784, 0.3, 'sine', 0.25), 200);
+    playTone(523, 0.12, 'square', 0.12);
+    setTimeout(() => playTone(659, 0.12, 'square', 0.12), 80);
+    setTimeout(() => playTone(784, 0.12, 'square', 0.15), 160);
+    setTimeout(() => playTone(1047, 0.4, 'sine', 0.2), 240);
 }
 
 function playStartSound() {
@@ -250,13 +251,17 @@ function runCountdown(seconds, callback) {
     const numEl = document.getElementById('countdown-number');
     overlay.classList.add('visible');
     let remaining = seconds;
+    const cdColors = ['#00e5ff', '#ffe42d', '#ff2d8a', '#8aff2d', '#ff8a2d'];
+    const cdTones = [523, 587, 659, 784, 880];
 
     function tick() {
+        const color = cdColors[remaining % cdColors.length];
         numEl.textContent = remaining;
+        numEl.style.color = color;
         numEl.classList.remove('pop');
         void numEl.offsetWidth;
         numEl.classList.add('pop');
-        playTone(440, 0.1, 'sine', 0.12);
+        playTone(cdTones[remaining % cdTones.length], 0.12, 'sine', 0.15);
 
         if (remaining <= 0) {
             overlay.classList.remove('visible');
@@ -365,25 +370,41 @@ function reveal() {
 }
 
 function spawnParticles() {
-    const colors = ['#f0c855', '#4ae885', '#6ec8db', '#a78bfa', '#e85454'];
+    const colors = ['#ff2d8a', '#ffe42d', '#00e5ff', '#8aff2d', '#ff8a2d', '#fff'];
     const rect = canvasBox.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
 
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 36; i++) {
         const el = document.createElement('div');
         el.className = 'particle';
-        const angle = (Math.PI * 2 * i) / 24;
-        const dist = 60 + Math.random() * 120;
+        const angle = (Math.PI * 2 * i) / 36;
+        const dist = 80 + Math.random() * 180;
         el.style.left = cx + 'px';
         el.style.top = cy + 'px';
         el.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
         el.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
         el.style.background = colors[i % colors.length];
-        el.style.width = (4 + Math.random() * 6) + 'px';
-        el.style.height = el.style.width;
+        const size = (5 + Math.random() * 8) + 'px';
+        el.style.width = size;
+        el.style.height = size;
+        el.style.boxShadow = `0 0 6px ${colors[i % colors.length]}`;
         canvasBox.appendChild(el);
-        setTimeout(() => el.remove(), 800);
+        setTimeout(() => el.remove(), 1000);
+    }
+
+    for (let i = 0; i < 20; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        const x = Math.random() * rect.width;
+        el.style.left = x + 'px';
+        el.style.top = '0px';
+        el.style.setProperty('--tx', (Math.random() - 0.5) * 200 + 'px');
+        el.style.setProperty('--ty', rect.height * (0.5 + Math.random() * 0.5) + 'px');
+        el.style.background = colors[i % colors.length];
+        el.style.animationDelay = (Math.random() * 0.3) + 's';
+        canvasBox.appendChild(el);
+        setTimeout(() => el.remove(), 1500);
     }
 }
 
