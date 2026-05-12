@@ -32,8 +32,11 @@
             <input type="number" id="speed3" value="10" class="speed-input" min="0.5" step="0.5">
         </div>
         <div class="speed-group">
-            <span class="panel-label">カウントダウン(s)</span>
-            <input type="number" id="countdown-sec" value="3" class="speed-input" min="0" max="10" step="1">
+            <label class="toggle-label">
+                <input type="checkbox" id="countdown-toggle" checked onchange="toggleCountdownInput()">
+                <span class="panel-label">カウントダウン</span>
+            </label>
+            <input type="number" id="countdown-sec" value="3" class="speed-input" min="1" max="10" step="1">
         </div>
         <div class="bulk-group">
             <button class="small-btn" onclick="bulkColor(true)">すべてカラー</button>
@@ -44,14 +47,16 @@
     <div id="grid" class="grid-container"></div>
 </div>
 
-<div id="play-mode" class="page" style="display: none;">
+<div id="play-mode" class="page play-page" style="display: none;">
     <div class="stage">
-        <div class="play-header">
-            <div class="play-info" id="play-info">SELECT A SET</div>
-            <div class="play-counter" id="play-counter"></div>
-        </div>
         <div class="canvas-wrapper">
             <div class="canvas-box" id="canvas-box">
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+                <div class="play-info-bar">
+                    <span class="play-info" id="play-info">SELECT A SET</span>
+                    <span class="play-counter" id="play-counter"></span>
+                </div>
                 <img id="quiz-img" src="" alt="">
                 <div class="progress-bar" id="progress-bar"></div>
                 <div class="timer-display" id="timer-display"></div>
@@ -60,15 +65,17 @@
                 </div>
             </div>
         </div>
-        <div class="play-controls">
-            <button class="btn-play btn-nav" onclick="prevQuiz()">◀</button>
-            <button class="btn-play btn-speed" onclick="startAnim(1)">爆速 (1)</button>
-            <button class="btn-play btn-speed" onclick="startAnim(2)">中速 (2)</button>
-            <button class="btn-play btn-speed" onclick="startAnim(3)">低速 (3)</button>
-            <button class="btn-play btn-pause" id="btn-pause" onclick="togglePause()">⏸</button>
-            <button class="btn-play btn-replay" onclick="replayAnim()">↻ リプレイ</button>
-            <button class="btn-play btn-reveal" onclick="reveal()">★ 正解 (Space)</button>
-            <button class="btn-play btn-nav" onclick="nextQuiz()">▶</button>
+        <div class="play-bottom">
+            <div class="play-controls">
+                <button class="btn-play btn-nav" onclick="prevQuiz()">◀</button>
+                <button class="btn-play btn-speed" onclick="startAnim(1)">爆速 (1)</button>
+                <button class="btn-play btn-speed" onclick="startAnim(2)">中速 (2)</button>
+                <button class="btn-play btn-speed" onclick="startAnim(3)">低速 (3)</button>
+                <button class="btn-play btn-pause" id="btn-pause" onclick="togglePause()">⏸</button>
+                <button class="btn-play btn-replay" onclick="replayAnim()">↻</button>
+                <button class="btn-play btn-reveal" onclick="reveal()">★ 正解</button>
+                <button class="btn-play btn-nav" onclick="nextQuiz()">▶</button>
+            </div>
         </div>
     </div>
 </div>

@@ -193,6 +193,7 @@ function switchMode(mode) {
     document.getElementById('play-mode').style.display = mode === 'play' ? 'block' : 'none';
     document.getElementById('nav-config').classList.toggle('active', mode === 'config');
     document.getElementById('nav-play').classList.toggle('active', mode === 'play');
+    document.body.classList.toggle('is-playing', mode === 'play');
     if (mode === 'play') loadQuiz();
 }
 
@@ -233,8 +234,9 @@ function startAnim(speedNum) {
     quizImg.style.animation = '';
     canvasBox.classList.remove('revealed');
 
-    const countdownSec = parseInt(document.getElementById('countdown-sec').value) || 0;
-    if (countdownSec > 0) {
+    const countdownOn = document.getElementById('countdown-toggle').checked;
+    const countdownSec = parseInt(document.getElementById('countdown-sec').value) || 3;
+    if (countdownOn && countdownSec > 0) {
         runCountdown(countdownSec, () => executeAnim(speedNum));
     } else {
         playStartSound();
@@ -440,9 +442,14 @@ async function loadConfig(input) {
     input.value = '';
 }
 
-// --- 7. Help ---
+// --- 7. Help & UI Toggles ---
 function toggleHelp() {
     helpOverlay.classList.toggle('visible');
+}
+
+function toggleCountdownInput() {
+    const on = document.getElementById('countdown-toggle').checked;
+    document.getElementById('countdown-sec').disabled = !on;
 }
 
 // --- 8. Keyboard Shortcuts ---
