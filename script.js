@@ -23,7 +23,7 @@ let rootHandle = null;
 let quizData = [];
 let currentIdx = 0;
 let objectUrls = [];
-let animState = { playing: false, paused: false, lastSpeed: 2, timerId: null, startTime: 0, elapsed: 0 };
+let animState = { playing: false, paused: false, lastSpeed: 2, timerId: null, startTime: 0, elapsed: 0, countingDown: false };
 
 // --- DOM References ---
 const gridEl = document.getElementById('grid');
@@ -221,21 +221,58 @@ async function loadQuiz() {
 }
 
 function startAnim(speedNum) {
-    if (quizData.length === 0) return;
+    if (quizData.length === 0 || animState.countingDown) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    playStartSound();
 
     resetAnimState();
-    const dur = parseFloat(document.getElementById('speed' + speedNum).value);
     animState.lastSpeed = speedNum;
-    animState.playing = true;
-    animState.startTime = performance.now();
 
     quizImg.classList.remove('revealed-img');
     quizImg.style.left = '110%';
     quizImg.style.transform = 'none';
     quizImg.style.animation = '';
     canvasBox.classList.remove('revealed');
+
+    const countdownSec = parseInt(document.getElementById('countdown-sec').value) || 0;
+    if (countdownSec > 0) {
+        runCountdown(countdownSec, () => executeAnim(speedNum));
+    } else {
+        playStartSound();
+        executeAnim(speedNum);
+    }
+}
+
+function runCountdown(seconds, callback) {
+    animState.countingDown = true;
+    const overlay = document.getElementById('countdown-overlay');
+    const numEl = document.getElementById('countdown-number');
+    overlay.classList.add('visible');
+    let remaining = seconds;
+
+    function tick() {
+        numEl.textContent = remaining;
+        numEl.classList.remove('pop');
+        void numEl.offsetWidth;
+        numEl.classList.add('pop');
+        playTone(440, 0.1, 'sine', 0.12);
+
+        if (remaining <= 0) {
+            overlay.classList.remove('visible');
+            animState.countingDown = false;
+            playStartSound();
+            callback();
+            return;
+        }
+        remaining--;
+        setTimeout(tick, 1000);
+    }
+    tick();
+}
+
+function executeAnim(speedNum) {
+    const dur = parseFloat(document.getElementById('speed' + speedNum).value);
+    animState.playing = true;
+    animState.startTime = performance.now();
 
     void quizImg.offsetWidth;
     quizImg.style.setProperty('--dur', dur + 's');
