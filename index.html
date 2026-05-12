@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Silhouette Master Web Pro v10.5</title>
+    <title>Silhouette Master Web Pro v10.9</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
@@ -14,33 +14,33 @@
         <button class="mode-btn active" id="nav-config" onclick="switchMode('config')">⚙ CONFIG</button>
         <button class="mode-btn" id="nav-play" onclick="switchMode('play')">▶ PLAY</button>
     </div>
-    <div class="nav-right">
-        <button class="mode-btn folder-btn" onclick="requestDirectoryAccess()">📁 フォルダ接続</button>
+    <div class="nav-right" id="nav-actions">
+        <button class="mode-btn folder-btn" onclick="requestDirectoryAccess()">📁 親フォルダ接続</button>
         <button class="mode-btn save-btn" onclick="saveConfig()">💾 設定保存</button>
         <label class="mode-btn load-btn">📂 設定読込<input type="file" accept=".json" onchange="loadConfig(this)"></label>
     </div>
 </nav>
 
 <div id="config-mode" class="page">
-    <div class="control-panel">
+    <div class="control-panel" id="main-panel">
         <div class="speed-group">
-            <span class="panel-label">速度設定(s):</span>
-            <label>1:<input type="number" id="speed1" value="2" class="speed-input"></label>
-            <label>2:<input type="number" id="speed2" value="5" class="speed-input"></label>
-            <label>3:<input type="number" id="speed3" value="10" class="speed-input"></label>
+            <span class="panel-label">速度(s):</span>
+            <input type="number" id="speed1" value="2" class="speed-input">
+            <input type="number" id="speed2" value="5" class="speed-input">
+            <input type="number" id="speed3" value="10" class="speed-input">
         </div>
         <div class="bulk-group">
             <button class="small-btn" onclick="bulkColor(true)">すべてカラー</button>
             <button class="small-btn" onclick="bulkColor(false)">すべてシルエット</button>
         </div>
-        <div id="file-status" style="color: #555; font-size: 12px;">フォルダ未接続</div>
-    </div>
+        <div id="file-status" style="color: var(--cyan); font-size: 12px; font-weight: bold;">フォルダ未接続</div>
+        </div>
     <div id="grid" class="grid-container"></div>
 </div>
 
 <div id="play-mode" class="page" style="display: none;">
     <div class="stage">
-        <div class="play-info" id="play-info">QUESTION 1 / -</div>
+        <div class="play-info" id="play-info">SELECT A SET</div>
         <div class="canvas-box">
             <img id="quiz-img" src="" alt="">
         </div>
