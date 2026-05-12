@@ -26,6 +26,12 @@ let currentQIdx = 0;
 let editingCategoryIdx = -1;
 let objectUrls = [];
 let animState = { playing: false, paused: false, lastSpeed: 2, timerId: null, startTime: 0, elapsed: 0, countingDown: false };
+let showPhase = 'opening'; // 'opening' | 'category' | 'quiz' | 'ending'
+
+let controlsTimer = null;
+let loadQuizId = 0;
+let quizLoading = false;
+let lastAdvanceTime = 0;
 
 const CATEGORY_COLORS = ['#ff2d8a', '#00e5ff', '#ffe42d', '#8aff2d', '#ff8a2d', '#a78bfa'];
 
@@ -42,16 +48,31 @@ const setlistContainer = document.getElementById('setlist-container');
 const setlistEmpty = document.getElementById('setlist-empty');
 const categoryDetail = document.getElementById('category-detail');
 const categoryDetailName = document.getElementById('category-detail-name');
+const showOverlay = document.getElementById('show-overlay');
+const quizControls = document.getElementById('quiz-controls');
+const showControlsEl = document.getElementById('show-controls');
+const btnShowAdvance = document.getElementById('btn-show-advance');
 
-// --- Audio (Web Audio API) ---
+// --- Audio (Web Audio API + Custom Sounds) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-function playTone(freq, duration, type = 'sine', gain = 0.15) {
+const customSounds = {
+    bgm:       { audio: null, fileName: null, volume: 0.3 },
+    start:     { audio: null, fileName: null, volume: 0.5 },
+    reveal:    { audio: null, fileName: null, volume: 0.5 },
+    countdown: { audio: null, fileName: null, volume: 0.5 }
+};
+
+let previewAudio = null;
+
+function getVolume(slot) { return customSounds[slot].volume; }
+
+function playTone(freq, duration, type = 'sine', gainVal = 0.15) {
     const osc = audioCtx.createOscillator();
     const g = audioCtx.createGain();
     osc.type = type;
     osc.frequency.value = freq;
-    g.gain.setValueAtTime(gain, audioCtx.currentTime);
+    g.gain.setValueAtTime(gainVal, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
     osc.connect(g);
     g.connect(audioCtx.destination);
@@ -59,15 +80,146 @@ function playTone(freq, duration, type = 'sine', gain = 0.15) {
     osc.stop(audioCtx.currentTime + duration);
 }
 
+function playCustomOrDefault(slot, defaultFn) {
+    if (customSounds[slot].audio) {
+        const a = customSounds[slot].audio.cloneNode();
+        a.volume = getVolume(slot);
+        a.play().catch(() => {});
+    } else {
+        defaultFn();
+    }
+}
+
 function playRevealSound() {
-    playTone(523, 0.12, 'square', 0.12);
-    setTimeout(() => playTone(659, 0.12, 'square', 0.12), 80);
-    setTimeout(() => playTone(784, 0.12, 'square', 0.15), 160);
-    setTimeout(() => playTone(1047, 0.4, 'sine', 0.2), 240);
+    const v = getVolume('reveal');
+    playCustomOrDefault('reveal', () => {
+        playTone(523, 0.12, 'square', v * 0.24);
+        setTimeout(() => playTone(659, 0.12, 'square', v * 0.24), 80);
+        setTimeout(() => playTone(784, 0.12, 'square', v * 0.3), 160);
+        setTimeout(() => playTone(1047, 0.4, 'sine', v * 0.4), 240);
+    });
 }
 
 function playStartSound() {
-    playTone(330, 0.08, 'square', 0.08);
+    const v = getVolume('start');
+    playCustomOrDefault('start', () => {
+        playTone(330, 0.08, 'square', v * 0.16);
+    });
+}
+
+function playCountdownTick(remaining) {
+    const cdTones = [523, 587, 659, 784, 880];
+    const v = getVolume('countdown');
+    playCustomOrDefault('countdown', () => {
+        playTone(cdTones[remaining % cdTones.length], 0.12, 'sine', v * 0.3);
+    });
+}
+
+// BGM control
+function startBGM() {
+    if (!customSounds.bgm.audio) return;
+    const a = customSounds.bgm.audio;
+    a.loop = true;
+    a.volume = getVolume('bgm');
+    a.currentTime = 0;
+    a.play().catch(() => {});
+}
+
+function stopBGM() {
+    if (!customSounds.bgm.audio) return;
+    customSounds.bgm.audio.pause();
+    customSounds.bgm.audio.currentTime = 0;
+}
+
+function loadCustomSound(slot, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const audio = new Audio(url);
+    audio.preload = 'auto';
+
+    if (customSounds[slot].audio) {
+        customSounds[slot].audio.pause();
+        URL.revokeObjectURL(customSounds[slot].audio.src);
+    }
+    customSounds[slot].audio = audio;
+    customSounds[slot].fileName = file.name;
+    audio.volume = getVolume(slot);
+
+    const nameEl = document.getElementById('sound-name-' + slot);
+    nameEl.textContent = file.name;
+    nameEl.classList.add('has-file');
+    input.value = '';
+}
+
+function clearCustomSound(slot) {
+    if (customSounds[slot].audio) {
+        customSounds[slot].audio.pause();
+        URL.revokeObjectURL(customSounds[slot].audio.src);
+        customSounds[slot].audio = null;
+    }
+    customSounds[slot].fileName = null;
+    const nameEl = document.getElementById('sound-name-' + slot);
+    nameEl.textContent = slot === 'bgm' ? '未設定' : 'デフォルト';
+    nameEl.classList.remove('has-file');
+}
+
+function updateVolume(slot, val) {
+    customSounds[slot].volume = parseInt(val) / 100;
+    document.getElementById('sound-vol-label-' + slot).textContent = val;
+    if (customSounds[slot].audio) {
+        customSounds[slot].audio.volume = customSounds[slot].volume;
+    }
+}
+
+function testSound(slot) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    stopAllPreviews();
+
+    if (slot === 'bgm') {
+        if (!customSounds.bgm.audio) return;
+        previewAudio = customSounds.bgm.audio;
+        previewAudio.loop = false;
+        previewAudio.volume = getVolume('bgm');
+        previewAudio.currentTime = 0;
+        previewAudio.play().catch(() => {});
+        const btn = document.getElementById('sound-test-bgm');
+        btn.classList.add('playing');
+        btn.textContent = '■';
+        previewAudio.onended = () => { btn.classList.remove('playing'); btn.textContent = '▶'; previewAudio = null; };
+    } else if (slot === 'start') {
+        playStartSound();
+    } else if (slot === 'reveal') {
+        playRevealSound();
+    } else if (slot === 'countdown') {
+        playCountdownTick(3);
+    }
+
+    if (customSounds[slot].audio && slot !== 'bgm') {
+        previewAudio = customSounds[slot].audio.cloneNode();
+        previewAudio.volume = getVolume(slot);
+        previewAudio.play().catch(() => {});
+        const btn = document.getElementById('sound-test-' + slot);
+        btn.classList.add('playing');
+        btn.textContent = '■';
+        previewAudio.onended = () => { btn.classList.remove('playing'); btn.textContent = '▶'; previewAudio = null; };
+    }
+}
+
+function stopAllPreviews() {
+    if (previewAudio) {
+        previewAudio.pause();
+        previewAudio.currentTime = 0;
+        previewAudio = null;
+    }
+    for (const slot of ['bgm', 'start', 'reveal', 'countdown']) {
+        const btn = document.getElementById('sound-test-' + slot);
+        if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; }
+    }
+    if (customSounds.bgm.audio) {
+        customSounds.bgm.audio.pause();
+        customSounds.bgm.audio.currentTime = 0;
+    }
 }
 
 // --- Memory Management ---
@@ -317,8 +469,139 @@ function switchMode(mode) {
     if (mode === 'play') {
         currentSetIdx = 0;
         currentQIdx = 0;
-        loadQuiz();
+        startBGM();
+        enterShowPhase('opening');
+    } else {
+        stopBGM();
+        hideShowOverlay();
     }
+}
+
+// --- Show Flow ---
+function enterShowPhase(phase) {
+    showPhase = phase;
+    resetAnimState();
+    loadQuizId++;
+    quizLoading = false;
+
+    if (phase === 'quiz') {
+        quizControls.style.display = '';
+        showControlsEl.style.display = 'none';
+        loadQuiz();
+        return;
+    }
+
+    quizControls.style.display = 'none';
+    showControlsEl.style.display = '';
+    showOverlay.style.display = 'flex';
+    showOverlay.className = 'show-overlay visible';
+
+    if (phase === 'opening') {
+        renderOpening();
+        btnShowAdvance.textContent = 'START';
+    } else if (phase === 'category') {
+        renderCategoryTitle();
+        btnShowAdvance.textContent = 'READY';
+    } else if (phase === 'ending') {
+        renderEnding();
+        btnShowAdvance.textContent = 'CONFIG に戻る';
+    }
+}
+
+function advanceShow() {
+    const now = Date.now();
+    if (now - lastAdvanceTime < 500) return;
+    lastAdvanceTime = now;
+
+    if (showPhase === 'opening') {
+        if (setlist.length === 0) return;
+        currentSetIdx = 0;
+        currentQIdx = 0;
+        enterShowPhase('category');
+    } else if (showPhase === 'category') {
+        enterShowPhase('quiz');
+    } else if (showPhase === 'ending') {
+        switchMode('config');
+    }
+}
+
+function hideShowOverlay() {
+    showOverlay.style.display = 'none';
+    showOverlay.className = 'show-overlay';
+    showOverlay.innerHTML = '';
+}
+
+function renderOpening() {
+    const totalQ = setlist.reduce((sum, cat) => sum + cat.questions.length, 0);
+    const catCount = setlist.length;
+
+    // ── フローティングタグ調整（手動） ──
+    // 50: 画面に出る総数の目安。増やすと密に、減らすとスカスカ
+    // size: 18が最小, +22で最大40px。両方の数値で範囲を変える
+    // rot: 回転角度の範囲（-15〜+15度）
+    // delay/dur: アニメーションの遅延と周期（秒）
+    // ※見た目の微調整はCSSの .show-float-tag も参照
+    const tags = [];
+    const copies = Math.max(3, Math.ceil(50 / setlist.length));
+    for (let c = 0; c < copies; c++) {
+        setlist.forEach((cat) => {
+            const top = Math.random() * 85;
+            const left = -5 + Math.random() * 95;
+            const delay = (Math.random() * 5).toFixed(1);
+            const dur = (4 + Math.random() * 5).toFixed(1);
+            const size = 18 + Math.floor(Math.random() * 22);
+            const rot = -15 + Math.floor(Math.random() * 30);
+            tags.push(`<span class="show-float-tag" style="top:${top}%;left:${left}%;animation-delay:${delay}s;animation-duration:${dur}s;font-size:${size}px;color:${cat.color};--rot:${rot}deg">${cat.displayName}</span>`);
+        });
+    }
+    const floatingTags = tags.join('');
+
+    showOverlay.innerHTML = `
+        <div class="show-screen show-opening">
+            <div class="show-float-layer">${floatingTags}</div>
+            <div class="show-deco-line"></div>
+            <h1 class="show-main-title">${document.getElementById('show-title').value || 'SILHOUETTE QUIZ'}</h1>
+            <div class="show-sub-title">${document.getElementById('show-subtitle').value || 'シルエットクイズ'}</div>
+            <div class="show-meta">
+                <span>${catCount} カテゴリ</span>
+                <span class="show-meta-dot">-</span>
+                <span>${totalQ} 問</span>
+            </div>
+            <div class="show-deco-line"></div>
+        </div>
+    `;
+}
+
+function renderCategoryTitle() {
+    const cat = setlist[currentSetIdx];
+    const roundNum = currentSetIdx + 1;
+    const total = setlist.length;
+    showOverlay.innerHTML = `
+        <div class="show-screen show-category" style="--cat-color: ${cat.color}">
+            <div class="show-round-label">Round ${roundNum} / ${total}</div>
+            <h1 class="show-cat-name">${cat.displayName}</h1>
+            <div class="show-cat-count">${cat.questions.length} 問</div>
+            <div class="show-cat-bar" style="background: ${cat.color}"></div>
+        </div>
+    `;
+}
+
+function renderEnding() {
+    const totalQ = setlist.reduce((sum, cat) => sum + cat.questions.length, 0);
+    showOverlay.innerHTML = `
+        <div class="show-screen show-ending">
+            <div class="show-deco-line"></div>
+            <h1 class="show-ending-title">FINISH!</h1>
+            <div class="show-ending-sub">お疲れ様でした</div>
+            <div class="show-meta">
+                <span>${setlist.length} カテゴリ</span>
+                <span class="show-meta-dot">-</span>
+                <span>${totalQ} 問 完了</span>
+            </div>
+            <div class="show-deco-line"></div>
+        </div>
+    `;
+    spawnParticles();
 }
 
 // --- 5. Play Engine (Setlist-aware) ---
@@ -331,14 +614,31 @@ async function loadQuiz() {
     const questions = getCurrentQuestions();
     if (questions.length === 0) return;
     resetAnimState();
+    quizLoading = true;
 
+    const thisId = ++loadQuizId;
+    const cat = setlist[currentSetIdx];
+    canvasBox.style.setProperty('--cat-color', cat.color);
+
+    showOverlay.innerHTML = `
+        <div class="show-screen show-question-num" style="--cat-color: ${cat.color}">
+            <span class="show-qnum">Q${currentQIdx + 1}</span>
+            <span class="show-qnum-total">/ ${questions.length}</span>
+        </div>
+    `;
+    showOverlay.style.display = 'flex';
+    showOverlay.className = 'show-overlay visible';
+
+    // Prepare image behind the overlay so it's ready before reveal
     const item = questions[currentQIdx];
     quizImg.onanimationend = null;
     quizImg.className = '';
-    quizImg.src = await getFileUrl(item);
+    const url = await getFileUrl(item);
+    if (thisId !== loadQuizId) return;
+    quizImg.src = url;
     quizImg.classList.toggle('is-silhouette', !item.isColor);
-    quizImg.style.left = "110%";
-    quizImg.style.transform = "none";
+    quizImg.style.left = '0';
+    quizImg.style.transform = 'translateX(110vw)';
     quizImg.style.animation = '';
     canvasBox.classList.remove('revealed');
     progressBar.classList.remove('active');
@@ -347,22 +647,30 @@ async function loadQuiz() {
     timerDisplay.textContent = '';
     timerDisplay.classList.remove('warning');
 
-    const cat = setlist[currentSetIdx];
-    playInfo.innerText = `${cat.displayName}  Q${currentQIdx + 1}`;
-    playInfo.style.color = '';
-    playCounter.textContent = `${currentQIdx + 1}/${questions.length}  [${currentSetIdx + 1}/${setlist.length}]`;
+    document.getElementById('play-round').textContent = `ROUND ${currentSetIdx + 1}`;
+    playInfo.textContent = cat.displayName;
+    playCounter.innerHTML = `<span class="play-counter-q">Q${currentQIdx + 1}</span><span class="play-counter-total"> / ${questions.length}</span>`;
+
+    // Wait for Q number display, then reveal
+    await new Promise(r => setTimeout(r, 1500));
+    if (thisId !== loadQuizId) return;
+
+    quizLoading = false;
+    hideShowOverlay();
 }
 
 function startAnim(speedNum) {
-    if (getCurrentQuestions().length === 0 || animState.countingDown) return;
+    if (showPhase !== 'quiz' || quizLoading) return;
+    if (getCurrentQuestions().length === 0) return;
+    if (animState.countingDown || animState.playing) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
     resetAnimState();
     animState.lastSpeed = speedNum;
 
     quizImg.classList.remove('revealed-img');
-    quizImg.style.left = '110%';
-    quizImg.style.transform = 'none';
+    quizImg.style.left = '0';
+    quizImg.style.transform = 'translateX(110vw)';
     quizImg.style.animation = '';
     canvasBox.classList.remove('revealed');
 
@@ -383,7 +691,6 @@ function runCountdown(seconds, callback) {
     overlay.classList.add('visible');
     let remaining = seconds;
     const cdColors = ['#00e5ff', '#ffe42d', '#ff2d8a', '#8aff2d', '#ff8a2d'];
-    const cdTones = [523, 587, 659, 784, 880];
 
     function tick() {
         const color = cdColors[remaining % cdColors.length];
@@ -392,7 +699,7 @@ function runCountdown(seconds, callback) {
         numEl.classList.remove('pop');
         void numEl.offsetWidth;
         numEl.classList.add('pop');
-        playTone(cdTones[remaining % cdTones.length], 0.12, 'sine', 0.15);
+        playCountdownTick(remaining);
 
         if (remaining <= 0) {
             overlay.classList.remove('visible');
@@ -412,6 +719,8 @@ function executeAnim(speedNum) {
     animState.playing = true;
     animState.startTime = performance.now();
 
+    quizImg.style.left = '0';
+    quizImg.style.transform = 'translateX(110vw)';
     void quizImg.offsetWidth;
     quizImg.style.setProperty('--dur', dur + 's');
     quizImg.classList.add('animating');
@@ -424,7 +733,8 @@ function executeAnim(speedNum) {
 
     quizImg.onanimationend = () => {
         quizImg.classList.remove('animating');
-        quizImg.style.left = "110%";
+        quizImg.style.left = '0';
+        quizImg.style.transform = 'translateX(110vw)';
         resetAnimState();
     };
 }
@@ -480,15 +790,17 @@ function resetAnimState() {
 }
 
 function reveal() {
+    if (showPhase !== 'quiz' || quizLoading) return;
     if (getCurrentQuestions().length === 0) return;
+    if (animState.countingDown) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
     playRevealSound();
     resetAnimState();
 
     quizImg.classList.remove('animating', 'is-silhouette', 'revealed-img');
     quizImg.style.animation = '';
-    quizImg.style.left = "50%";
-    quizImg.style.transform = "translateX(-50%)";
+    quizImg.style.left = '50%';
+    quizImg.style.transform = 'translateX(-50%)';
 
     void quizImg.offsetWidth;
     quizImg.classList.add('revealed-img');
@@ -497,8 +809,8 @@ function reveal() {
     quizImg.addEventListener('animationend', function onRevealEnd() {
         quizImg.removeEventListener('animationend', onRevealEnd);
         quizImg.classList.remove('revealed-img');
-        quizImg.style.left = "50%";
-        quizImg.style.transform = "translateX(-50%)";
+        quizImg.style.left = '50%';
+        quizImg.style.transform = 'translateX(-50%)';
     });
 
     progressBar.classList.remove('active');
@@ -548,24 +860,30 @@ function spawnParticles() {
     }
 }
 
-// --- Navigation (Setlist-aware) ---
+// --- Navigation (Setlist-aware, with show flow) ---
 function nextQuiz() {
     if (setlist.length === 0) return;
+    if (showPhase !== 'quiz' || quizLoading) return;
+    if (animState.countingDown || animState.playing) return;
+
     const questions = getCurrentQuestions();
     if (currentQIdx < questions.length - 1) {
         currentQIdx++;
+        loadQuiz();
     } else if (currentSetIdx < setlist.length - 1) {
         currentSetIdx++;
         currentQIdx = 0;
+        enterShowPhase('category');
     } else {
-        currentSetIdx = 0;
-        currentQIdx = 0;
+        enterShowPhase('ending');
     }
-    loadQuiz();
 }
 
 function prevQuiz() {
     if (setlist.length === 0) return;
+    if (showPhase !== 'quiz' || quizLoading) return;
+    if (animState.countingDown || animState.playing) return;
+
     if (currentQIdx > 0) {
         currentQIdx--;
     } else if (currentSetIdx > 0) {
@@ -582,7 +900,7 @@ function prevQuiz() {
 function saveConfig() {
     if (setlist.length === 0) return;
     const config = {
-        version: 3,
+        version: 4,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -591,6 +909,16 @@ function saveConfig() {
         countdown: {
             enabled: document.getElementById('countdown-toggle').checked,
             seconds: document.getElementById('countdown-sec').value
+        },
+        showTitle: {
+            main: document.getElementById('show-title').value,
+            sub: document.getElementById('show-subtitle').value
+        },
+        sounds: {
+            bgm:       { file: customSounds.bgm.fileName,       volume: customSounds.bgm.volume },
+            start:     { file: customSounds.start.fileName,     volume: customSounds.start.volume },
+            reveal:    { file: customSounds.reveal.fileName,    volume: customSounds.reveal.volume },
+            countdown: { file: customSounds.countdown.fileName, volume: customSounds.countdown.volume }
         },
         setlist: setlist.map(cat => ({
             folder: cat.folder,
@@ -621,6 +949,31 @@ async function loadConfig(input) {
         document.getElementById('countdown-toggle').checked = config.countdown.enabled;
         document.getElementById('countdown-sec').value = config.countdown.seconds;
         toggleCountdownInput();
+    }
+
+    if (config.showTitle) {
+        if (config.showTitle.main) document.getElementById('show-title').value = config.showTitle.main;
+        if (config.showTitle.sub) document.getElementById('show-subtitle').value = config.showTitle.sub;
+    }
+
+    if (config.sounds) {
+        for (const slot of ['bgm', 'start', 'reveal', 'countdown']) {
+            const saved = config.sounds[slot];
+            if (!saved) continue;
+            const sObj = typeof saved === 'object' ? saved : { file: saved, volume: 0.5 };
+            if (sObj.volume !== undefined) {
+                customSounds[slot].volume = sObj.volume;
+                const volSlider = document.getElementById('sound-vol-' + slot);
+                const volLabel = document.getElementById('sound-vol-label-' + slot);
+                if (volSlider) volSlider.value = Math.round(sObj.volume * 100);
+                if (volLabel) volLabel.textContent = Math.round(sObj.volume * 100);
+            }
+            const nameEl = document.getElementById('sound-name-' + slot);
+            if (sObj.file) {
+                nameEl.textContent = sObj.file + ' (要再選択)';
+                nameEl.classList.remove('has-file');
+            }
+        }
     }
 
     if (config.version >= 3 && config.setlist) {
@@ -681,7 +1034,36 @@ function toggleCountdownInput() {
 }
 
 // --- 8. Keyboard Shortcuts ---
+// Escape: skip/cancel current overlay, countdown, or animation (testing用)
+function escapeAction() {
+    if (showPhase !== 'quiz') return;
+    if (quizLoading) {
+        loadQuizId++;
+        quizLoading = false;
+        hideShowOverlay();
+        return;
+    }
+    if (animState.countingDown) {
+        animState.countingDown = false;
+        document.getElementById('countdown-overlay').classList.remove('visible');
+        return;
+    }
+    if (animState.playing) {
+        resetAnimState();
+        quizImg.style.animation = '';
+        quizImg.style.left = '0';
+        quizImg.style.transform = 'translateX(110vw)';
+        progressBar.classList.remove('active');
+        progressBar.style.width = '0%';
+        progressBar.style.transitionDuration = '0s';
+        timerDisplay.textContent = '';
+        timerDisplay.classList.remove('warning');
+        return;
+    }
+}
+
 window.addEventListener('keydown', (e) => {
+    // Help overlay: always closeable
     if (helpOverlay.classList.contains('visible')) {
         if (e.key === 'Escape' || e.key.toLowerCase() === 'h' || e.key === '?') toggleHelp();
         return;
@@ -694,6 +1076,47 @@ window.addEventListener('keydown', (e) => {
     }
 
     const k = e.key.toLowerCase();
+
+    // Global play-mode keys
+    if (k === 'f') {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+        return;
+    }
+    if (k === 'h' || e.key === '?') { toggleHelp(); return; }
+
+    // Escape: universal skip / cancel
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        escapeAction();
+        return;
+    }
+
+    // ── Show overlay phases (opening / category / ending) ──
+    if (showPhase !== 'quiz') {
+        if (e.code === 'Space' || e.key === 'Enter') {
+            e.preventDefault();
+            advanceShow();
+        }
+        return;
+    }
+
+    // ── Quiz phase ──
+
+    // Q-number overlay active: block everything
+    if (quizLoading) return;
+
+    // Countdown active: block everything
+    if (animState.countingDown) return;
+
+    // Animation playing: reveal and pause only
+    if (animState.playing) {
+        if (e.code === 'Space') { e.preventDefault(); reveal(); }
+        else if (k === 'p') togglePause();
+        return;
+    }
+
+    // Idle: all controls
     if (e.code === 'Space') { e.preventDefault(); reveal(); }
     else if (k === '1') startAnim(1);
     else if (k === '2') startAnim(2);
@@ -702,9 +1125,30 @@ window.addEventListener('keydown', (e) => {
     else if (e.key === 'ArrowLeft') prevQuiz();
     else if (k === 'p') togglePause();
     else if (k === 'r') replayAnim();
-    else if (k === 'f') {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else document.exitFullscreen();
+});
+
+// --- 9. Play Controls Auto-hide ---
+const playBottom = document.querySelector('.play-bottom');
+
+function showPlayControls() {
+    playBottom.classList.add('visible');
+    clearTimeout(controlsTimer);
+    controlsTimer = setTimeout(() => {
+        playBottom.classList.remove('visible');
+    }, 3000);
+}
+
+document.querySelector('.stage')?.addEventListener('mousemove', () => {
+    if (document.getElementById('play-mode').style.display !== 'none') {
+        showPlayControls();
     }
-    else if (k === 'h' || e.key === '?') toggleHelp();
+});
+playBottom?.addEventListener('mouseenter', () => {
+    clearTimeout(controlsTimer);
+    playBottom.classList.add('visible');
+});
+playBottom?.addEventListener('mouseleave', () => {
+    controlsTimer = setTimeout(() => {
+        playBottom.classList.remove('visible');
+    }, 1500);
 });

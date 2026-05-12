@@ -42,7 +42,58 @@
             <button class="small-btn" onclick="bulkColor(true)">すべてカラー</button>
             <button class="small-btn" onclick="bulkColor(false)">すべてシルエット</button>
         </div>
+        <div class="title-group">
+            <span class="panel-label">タイトル</span>
+            <input type="text" id="show-title" value="SILHOUETTE QUIZ" class="title-input" placeholder="メインタイトル">
+            <input type="text" id="show-subtitle" value="シルエットクイズ" class="title-input title-input-sub" placeholder="サブタイトル">
+        </div>
         <div id="file-status">フォルダ未接続</div>
+    </div>
+
+    <!-- Sound Settings -->
+    <div class="sound-section">
+        <div class="sound-section-header">
+            <h3 class="setlist-title">🔊 サウンド設定</h3>
+            <button class="small-btn sound-stop-all-btn" id="sound-stop-all" onclick="stopAllPreviews()">■ 停止</button>
+        </div>
+        <div class="sound-slots">
+            <div class="sound-slot" data-slot="bgm">
+                <span class="sound-label">🎵 BGM</span>
+                <span class="sound-file-name" id="sound-name-bgm">未設定</span>
+                <input type="range" class="sound-volume" id="sound-vol-bgm" min="0" max="100" value="30" oninput="updateVolume('bgm', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-bgm">30</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('bgm', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-bgm" onclick="testSound('bgm')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('bgm')">✕</button>
+            </div>
+            <div class="sound-slot" data-slot="start">
+                <span class="sound-label">⏩ スタート</span>
+                <span class="sound-file-name" id="sound-name-start">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-start" min="0" max="100" value="50" oninput="updateVolume('start', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-start">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('start', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-start" onclick="testSound('start')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('start')">✕</button>
+            </div>
+            <div class="sound-slot" data-slot="reveal">
+                <span class="sound-label">🎉 正解</span>
+                <span class="sound-file-name" id="sound-name-reveal">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-reveal" min="0" max="100" value="50" oninput="updateVolume('reveal', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-reveal">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('reveal', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-reveal" onclick="testSound('reveal')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('reveal')">✕</button>
+            </div>
+            <div class="sound-slot" data-slot="countdown">
+                <span class="sound-label">⏱ CD</span>
+                <span class="sound-file-name" id="sound-name-countdown">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-countdown" min="0" max="100" value="50" oninput="updateVolume('countdown', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-countdown">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('countdown', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-countdown" onclick="testSound('countdown')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('countdown')">✕</button>
+            </div>
+        </div>
     </div>
 
     <!-- Setlist Area -->
@@ -77,6 +128,7 @@
                 <div class="corner-bl"></div>
                 <div class="corner-br"></div>
                 <div class="play-info-bar">
+                    <span class="play-round" id="play-round"></span>
                     <span class="play-info" id="play-info">SELECT A SET</span>
                     <span class="play-counter" id="play-counter"></span>
                 </div>
@@ -86,10 +138,11 @@
                 <div class="countdown-overlay" id="countdown-overlay">
                     <span class="countdown-number" id="countdown-number"></span>
                 </div>
+                <div class="show-overlay" id="show-overlay"></div>
             </div>
         </div>
         <div class="play-bottom">
-            <div class="play-controls">
+            <div class="play-controls" id="quiz-controls">
                 <button class="btn-play btn-nav" onclick="prevQuiz()">◀</button>
                 <button class="btn-play btn-speed" onclick="startAnim(1)">爆速 (1)</button>
                 <button class="btn-play btn-speed" onclick="startAnim(2)">中速 (2)</button>
@@ -99,6 +152,9 @@
                 <button class="btn-play btn-reveal" onclick="reveal()">★ 正解</button>
                 <button class="btn-play btn-nav" onclick="nextQuiz()">▶</button>
             </div>
+            <div class="show-controls" id="show-controls" style="display:none;">
+                <button class="btn-play btn-show-advance" id="btn-show-advance" onclick="advanceShow()">START</button>
+            </div>
         </div>
     </div>
 </div>
@@ -107,16 +163,22 @@
 <div class="help-overlay" id="help-overlay" onclick="toggleHelp()">
     <div class="help-box" onclick="event.stopPropagation()">
         <h2>⌨ キーボードショートカット</h2>
+        <h3 class="help-section-title">ショー画面 (Opening / Category / Ending)</h3>
+        <div class="shortcut-row"><span>次へ進む</span><kbd>Space</kbd> / <kbd>Enter</kbd></div>
+        <h3 class="help-section-title">クイズ画面 — 待機中</h3>
         <div class="shortcut-row"><span>正解を表示</span><kbd>Space</kbd></div>
-        <div class="shortcut-row"><span>爆速スタート</span><kbd>1</kbd></div>
-        <div class="shortcut-row"><span>中速スタート</span><kbd>2</kbd></div>
-        <div class="shortcut-row"><span>低速スタート</span><kbd>3</kbd></div>
+        <div class="shortcut-row"><span>爆速 / 中速 / 低速</span><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></div>
         <div class="shortcut-row"><span>前の問題</span><kbd>←</kbd></div>
         <div class="shortcut-row"><span>次の問題</span><kbd>→</kbd></div>
-        <div class="shortcut-row"><span>一時停止/再開</span><kbd>P</kbd></div>
         <div class="shortcut-row"><span>リプレイ</span><kbd>R</kbd></div>
+        <h3 class="help-section-title">クイズ画面 — 再生中</h3>
+        <div class="shortcut-row"><span>正解を表示（停止して解答）</span><kbd>Space</kbd></div>
+        <div class="shortcut-row"><span>一時停止 / 再開</span><kbd>P</kbd></div>
+        <h3 class="help-section-title">共通</h3>
+        <div class="shortcut-row"><span>スキップ / キャンセル</span><kbd>Esc</kbd></div>
         <div class="shortcut-row"><span>フルスクリーン</span><kbd>F</kbd></div>
-        <div class="shortcut-row"><span>ヘルプ表示</span><kbd>H / ?</kbd></div>
+        <div class="shortcut-row"><span>ヘルプ表示</span><kbd>H</kbd> / <kbd>?</kbd></div>
+        <p class="help-note">※ カウントダウン中・スライド再生中は ←→ 1 2 3 無効</p>
     </div>
 </div>
 
