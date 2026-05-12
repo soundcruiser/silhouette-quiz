@@ -1,3 +1,23 @@
+// --- 簡易アクセス制限 (v10.10) ---
+const SECRET_PASS = "ito-luxury-2026"; // ここに好きな合言葉を設定してください
+
+if (sessionStorage.getItem("auth") !== "true") {
+    const input = prompt("【Silhouette Master Pro】\nアクセスコードを入力してください：");
+    if (input === SECRET_PASS) {
+        sessionStorage.setItem("auth", "true"); // ブラウザを閉じるまで有効
+    } else {
+        alert("コードが正しくありません。");
+        document.body.innerHTML = `
+            <div style="background:#1a1b1f; color:#ebcb8b; height:100vh; display:flex; align-items:center; justify-content:center; font-family:sans-serif;">
+                <div style="text-align:center; border:1px solid #ebcb8b; padding:40px; border-radius:12px;">
+                    <h1>ACCESS DENIED</h1>
+                    <p style="color:#aaa;">認証が必要です。ページを更新してやり直してください。</p>
+                </div>
+            </div>`;
+        throw new Error("Authentication failed");
+    }
+}
+
 let rootHandle = null;
 let quizData = [];
 let currentIdx = 0;
