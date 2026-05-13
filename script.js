@@ -732,6 +732,28 @@ function updateVolume(slot, val) {
 }
 
 function testSound(slot) {
+    if (slot === 'thinkingLoop') {
+        const btn = document.getElementById('sound-test-thinkingLoop');
+        if (btn && btn.classList.contains('playing')) {
+            if (thinkingLoopPreviewTimer) {
+                clearTimeout(thinkingLoopPreviewTimer);
+                thinkingLoopPreviewTimer = null;
+            }
+            if (previewAudio) {
+                try {
+                    previewAudio.pause();
+                    previewAudio.currentTime = 0;
+                } catch (e) { /* ignore */ }
+                try {
+                    previewAudio.remove();
+                } catch (e) { /* ignore */ }
+                previewAudio = null;
+            }
+            btn.classList.remove('playing');
+            btn.textContent = '▶';
+            return;
+        }
+    }
     if (audioCtx.state === 'suspended') audioCtx.resume();
     stopAllPreviews();
 
@@ -774,16 +796,12 @@ function testSound(slot) {
             const a = customSounds.thinkingLoop.audio.cloneNode();
             a.loop = true;
             a.volume = getVolume('thinkingLoop');
+            a.setAttribute('data-thinking-loop-preview', '');
+            a.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;opacity:0;pointer-events:none;';
+            document.body.appendChild(a);
             previewAudio = a;
             a.play().catch(() => {});
             if (btn) { btn.classList.add('playing'); btn.textContent = '■'; }
-            thinkingLoopPreviewTimer = setTimeout(() => {
-                a.pause();
-                a.currentTime = 0;
-                previewAudio = null;
-                thinkingLoopPreviewTimer = null;
-                resetBtn();
-            }, 2500);
         } else {
             const v = getVolume('thinkingLoop');
             playTone(392, 0.055, 'sine', v * 0.11);
@@ -813,8 +831,13 @@ function stopAllPreviews() {
         thinkingLoopPreviewTimer = null;
     }
     if (previewAudio) {
-        previewAudio.pause();
-        previewAudio.currentTime = 0;
+        try {
+            previewAudio.pause();
+            previewAudio.currentTime = 0;
+        } catch (e) { /* ignore */ }
+        try {
+            previewAudio.remove();
+        } catch (e) { /* ignore */ }
         previewAudio = null;
     }
     stopAllClonedCustomSounds();
@@ -1490,8 +1513,7 @@ function executeAnim(speedNum) {
     detachSlideAnimEndListener();
     slideAnimEndListener = (ev) => {
         if (ev.target !== quizImg) return;
-        const animName = ev.animationName || '';
-        if (!animName.includes('slideLeft')) return;
+        if (!quizImg.classList.contains('animating')) return;
         detachSlideAnimEndListener();
         quizImg.classList.remove('animating');
         quizImg.style.left = '0';
