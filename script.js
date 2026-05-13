@@ -47,10 +47,13 @@ const customSounds = {
     opening:   { audio: null, fileName: null, volume: 0.5 },
     category:  { audio: null, fileName: null, volume: 0.5 },
     qIntro:    { audio: null, fileName: null, volume: 0.5 },
-    qAfter:    { audio: null, fileName: null, volume: 0.5 }
+    qAfter:    { audio: null, fileName: null, volume: 0.5 },
+    ending:    { audio: null, fileName: null, volume: 0.5 }
 };
 
 let previewAudio = null;
+/** オープニング画面表示中のみループ再生する HTMLAudioElement（カスタム音源用） */
+let openingLoopAudio = null;
 
 function getVolume(slot) { return customSounds[slot].volume; }
 
@@ -103,14 +106,39 @@ function playCountdownTick(remaining) {
     });
 }
 
-function playOpeningSound() {
+function stopOpeningLoop() {
+    if (openingLoopAudio) {
+        openingLoopAudio.pause();
+        openingLoopAudio.currentTime = 0;
+        openingLoopAudio = null;
+    }
+}
+
+function playOpeningDefaultJingle() {
     const v = getVolume('opening');
-    playCustomOrDefault('opening', () => {
-        playTone(392, 0.11, 'triangle', v * 0.2);
-        setTimeout(() => playTone(523, 0.12, 'triangle', v * 0.24), 95);
-        setTimeout(() => playTone(659, 0.14, 'sine', v * 0.26), 210);
-        setTimeout(() => playTone(784, 0.16, 'sine', v * 0.22), 360);
-    });
+    playTone(392, 0.11, 'triangle', v * 0.2);
+    setTimeout(() => playTone(523, 0.12, 'triangle', v * 0.24), 95);
+    setTimeout(() => playTone(659, 0.14, 'sine', v * 0.26), 210);
+    setTimeout(() => playTone(784, 0.16, 'sine', v * 0.22), 360);
+}
+
+/** オープニング画面用: カスタム音源はループ、未設定時はワンショットのデフォルトジングル */
+function startOpeningScreenAudio() {
+    stopOpeningLoop();
+    if (customSounds.opening.audio) {
+        const a = customSounds.opening.audio.cloneNode();
+        a.volume = getVolume('opening');
+        a.loop = true;
+        a.play().catch(() => {});
+        openingLoopAudio = a;
+    } else {
+        playOpeningDefaultJingle();
+    }
+}
+
+/** テスト再生など: カスタムは1回だけ、未設定はデフォルトジングル */
+function playOpeningSound() {
+    playCustomOrDefault('opening', playOpeningDefaultJingle);
 }
 
 function playCategorySound() {
@@ -135,6 +163,16 @@ function playQAfterSound() {
     playCustomOrDefault('qAfter', () => {
         playTone(659, 0.12, 'triangle', v * 0.24);
         setTimeout(() => playTone(880, 0.11, 'sine', v * 0.22), 90);
+    });
+}
+
+function playEndingSound() {
+    const v = getVolume('ending');
+    playCustomOrDefault('ending', () => {
+        playTone(523, 0.12, 'triangle', v * 0.22);
+        setTimeout(() => playTone(659, 0.14, 'sine', v * 0.26), 100);
+        setTimeout(() => playTone(784, 0.18, 'sine', v * 0.28), 220);
+        setTimeout(() => playTone(1047, 0.22, 'sine', v * 0.24), 380);
     });
 }
 
@@ -217,13 +255,15 @@ function testSound(slot) {
     } else if (slot === 'countdown') {
         playCountdownTick(3);
     } else if (slot === 'opening') {
-        playOpeningSound();
+        if (!customSounds.opening.audio) playOpeningSound();
     } else if (slot === 'category') {
         playCategorySound();
     } else if (slot === 'qIntro') {
         playQIntroSound();
     } else if (slot === 'qAfter') {
         playQAfterSound();
+    } else if (slot === 'ending') {
+        if (!customSounds.ending.audio) playEndingSound();
     }
 
     if (customSounds[slot].audio && slot !== 'bgm') {
@@ -243,7 +283,8 @@ function stopAllPreviews() {
         previewAudio.currentTime = 0;
         previewAudio = null;
     }
-    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter']) {
+    stopOpeningLoop();
+    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending']) {
         const btn = document.getElementById('sound-test-' + slot);
         if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; }
     }
@@ -557,12 +598,14 @@ function switchMode(mode) {
         enterShowPhase('opening');
     } else {
         stopBGM();
+        stopOpeningLoop();
         hideShowOverlay();
     }
 }
 
 // --- Show Flow ---
 function enterShowPhase(phase) {
+    stopOpeningLoop();
     showPhase = phase;
     resetAnimState();
     loadQuizId++;
@@ -656,7 +699,7 @@ function renderOpening() {
         </div>
     `;
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    playOpeningSound();
+    startOpeningScreenAudio();
 }
 
 function renderCategoryTitle() {
@@ -696,6 +739,8 @@ function renderEnding() {
         </div>
     `;
     spawnParticles();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    playEndingSound();
 }
 
 // --- 5. Play Engine (Setlist-aware) ---
@@ -1015,7 +1060,7 @@ function prevQuiz() {
 function saveConfig() {
     if (setlist.length === 0) return;
     const config = {
-        version: 8,
+        version: 9,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -1039,7 +1084,8 @@ function saveConfig() {
             opening:   { file: customSounds.opening.fileName,   volume: customSounds.opening.volume },
             category:  { file: customSounds.category.fileName,  volume: customSounds.category.volume },
             qIntro:    { file: customSounds.qIntro.fileName,    volume: customSounds.qIntro.volume },
-            qAfter:    { file: customSounds.qAfter.fileName,    volume: customSounds.qAfter.volume }
+            qAfter:    { file: customSounds.qAfter.fileName,    volume: customSounds.qAfter.volume },
+            ending:    { file: customSounds.ending.fileName,    volume: customSounds.ending.volume }
         },
         setlist: setlist.map(cat => ({
             folder: cat.folder,
@@ -1084,7 +1130,7 @@ async function loadConfig(input) {
             config.sounds.start2 = config.sounds.start;
             config.sounds.start3 = config.sounds.start;
         }
-        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter']) {
+        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending']) {
             const saved = config.sounds[slot];
             if (!saved) continue;
             const sObj = typeof saved === 'object' ? saved : { file: saved, volume: 0.5 };

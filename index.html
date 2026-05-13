@@ -149,6 +149,15 @@
                 <button class="small-btn sound-test-btn" id="sound-test-qAfter" onclick="testSound('qAfter')">▶</button>
                 <button class="small-btn sound-clear-btn" onclick="clearCustomSound('qAfter')">✕</button>
             </div>
+            <div class="sound-slot" data-slot="ending">
+                <span class="sound-label">🏁 エンディング</span>
+                <span class="sound-file-name" id="sound-name-ending">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-ending" min="0" max="100" value="50" oninput="updateVolume('ending', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-ending">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('ending', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-ending" onclick="testSound('ending')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('ending')">✕</button>
+            </div>
         </div>
     </div>
 
