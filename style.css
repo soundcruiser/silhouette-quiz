@@ -1464,8 +1464,22 @@ body.is-playing nav {
     align-items: center;
     gap: 8px 10px;
 }
+.floating-shapes-vis-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    cursor: pointer;
+    user-select: none;
+}
+.floating-shapes-vis-wrap input.fs-vis {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--pink);
+    cursor: pointer;
+}
 .floating-shapes-row-label {
-    flex: 0 0 5.5em;
+    flex: 0 0 auto;
     font-size: 12px;
     font-weight: 700;
     color: var(--text-muted);

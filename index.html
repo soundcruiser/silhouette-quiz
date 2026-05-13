@@ -55,27 +55,39 @@
                     <span class="sound-chevron" aria-hidden="true"></span>
                 </summary>
                 <div class="floating-shapes-body">
-                    <p class="floating-shapes-hint">絵文字や記号を入力。空マスは既定の記号になります。オープニング／カテゴリ／エンディング／考え中オーバーレイの背景装飾に使われます。</p>
+                    <p class="floating-shapes-hint">各行のチェックで表示のON/OFF。絵文字や記号は8マス（空は既定）。オープニング／カテゴリ／エンディング／考え中に反映されます。</p>
                     <div class="floating-shapes-row">
-                        <span class="floating-shapes-row-label">オープニング</span>
+                        <label class="floating-shapes-vis-wrap" title="このシーンで浮遊シェイプを表示">
+                            <input type="checkbox" class="fs-vis" id="fs-vis-opening" checked>
+                            <span class="floating-shapes-row-label">オープニング</span>
+                        </label>
                         <div class="floating-shapes-cells">
                             <input type="text" class="fs-cell" id="fs-opening-0" maxlength="8" value="?" autocomplete="off" title="シェイプ1"><input type="text" class="fs-cell" id="fs-opening-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-7" maxlength="8" value="◆" autocomplete="off">
                         </div>
                     </div>
                     <div class="floating-shapes-row">
-                        <span class="floating-shapes-row-label">カテゴリ</span>
+                        <label class="floating-shapes-vis-wrap" title="このシーンで浮遊シェイプを表示">
+                            <input type="checkbox" class="fs-vis" id="fs-vis-category" checked>
+                            <span class="floating-shapes-row-label">カテゴリ</span>
+                        </label>
                         <div class="floating-shapes-cells">
                             <input type="text" class="fs-cell" id="fs-category-0" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-7" maxlength="8" value="◆" autocomplete="off">
                         </div>
                     </div>
                     <div class="floating-shapes-row">
-                        <span class="floating-shapes-row-label">エンディング</span>
+                        <label class="floating-shapes-vis-wrap" title="このシーンで浮遊シェイプを表示">
+                            <input type="checkbox" class="fs-vis" id="fs-vis-ending" checked>
+                            <span class="floating-shapes-row-label">エンディング</span>
+                        </label>
                         <div class="floating-shapes-cells">
                             <input type="text" class="fs-cell" id="fs-ending-0" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-7" maxlength="8" value="◆" autocomplete="off">
                         </div>
                     </div>
                     <div class="floating-shapes-row">
-                        <span class="floating-shapes-row-label">考え中</span>
+                        <label class="floating-shapes-vis-wrap" title="このシーンで浮遊シェイプを表示">
+                            <input type="checkbox" class="fs-vis" id="fs-vis-thinking" checked>
+                            <span class="floating-shapes-row-label">考え中</span>
+                        </label>
                         <div class="floating-shapes-cells">
                             <input type="text" class="fs-cell" id="fs-thinking-0" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-7" maxlength="8" value="◆" autocomplete="off">
                         </div>

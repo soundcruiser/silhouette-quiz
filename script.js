@@ -142,6 +142,11 @@ function getFloatingShapesForEvent(event) {
     return normalizeFloatingShapesRow(fromInputs);
 }
 
+function isFloatingShapesVisibleForEvent(event) {
+    const ch = document.getElementById(`fs-vis-${event}`);
+    return ch ? !!ch.checked : true;
+}
+
 function buildFloatingShapesInnerHtml(eventKey) {
     const chars = getFloatingShapesForEvent(eventKey);
     let html = '';
@@ -151,9 +156,19 @@ function buildFloatingShapesInnerHtml(eventKey) {
     return html;
 }
 
+/** 表示ONのときだけラッパー付きHTML（OFFなら空文字＝レイヤーごと省略） */
+function buildFloatingShapesLayerHtml(eventKey) {
+    if (!isFloatingShapesVisibleForEvent(eventKey)) return '';
+    return `<div class="thinking-shapes" aria-hidden="true">${buildFloatingShapesInnerHtml(eventKey)}</div>`;
+}
+
 function applyThinkingShapesFromForm() {
     const host = document.getElementById('thinking-shapes-root');
     if (!host) return;
+    if (!isFloatingShapesVisibleForEvent('thinking')) {
+        host.innerHTML = '';
+        return;
+    }
     host.innerHTML = buildFloatingShapesInnerHtml('thinking');
 }
 
@@ -161,6 +176,15 @@ function collectFloatingShapesForConfig() {
     const o = {};
     for (const ev of FLOATING_SHAPE_EVENTS) {
         o[ev] = getFloatingShapesForEvent(ev);
+    }
+    return o;
+}
+
+function collectFloatingShapesVisibleForConfig() {
+    const o = {};
+    for (const ev of FLOATING_SHAPE_EVENTS) {
+        const ch = document.getElementById(`fs-vis-${ev}`);
+        o[ev] = ch ? !!ch.checked : true;
     }
     return o;
 }
@@ -176,11 +200,29 @@ function applyFloatingShapesFromConfig(floatingShapes) {
     }
 }
 
+function applyFloatingShapesVisibleFromConfig(vis) {
+    if (!vis || typeof vis !== 'object') return;
+    for (const ev of FLOATING_SHAPE_EVENTS) {
+        if (vis[ev] === undefined) continue;
+        const ch = document.getElementById(`fs-vis-${ev}`);
+        if (ch) ch.checked = !!vis[ev];
+    }
+}
+
 function initFloatingShapesInputDelegation() {
-    document.querySelector('.floating-shapes-details')?.addEventListener('input', (e) => {
+    const root = document.querySelector('.floating-shapes-details');
+    if (!root) return;
+    root.addEventListener('input', (e) => {
         const t = /** @type {HTMLElement} */ (e.target);
         if (!t.classList?.contains('fs-cell')) return;
         if (thinkingOverlayVisible && t.id && t.id.startsWith('fs-thinking-')) {
+            applyThinkingShapesFromForm();
+        }
+    });
+    root.addEventListener('change', (e) => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (!t.classList?.contains('fs-vis')) return;
+        if (thinkingOverlayVisible && t.id === 'fs-vis-thinking') {
             applyThinkingShapesFromForm();
         }
     });
@@ -1171,12 +1213,12 @@ function renderOpening() {
         });
     }
     const floatingTags = tags.join('');
-    const decoShapes = buildFloatingShapesInnerHtml('opening');
+    const openingShapesLayer = buildFloatingShapesLayerHtml('opening');
 
     showOverlay.innerHTML = `
         <div class="show-screen show-opening">
             <div class="show-float-layer">${floatingTags}</div>
-            <div class="thinking-shapes" aria-hidden="true">${decoShapes}</div>
+            ${openingShapesLayer}
             <div class="show-deco-line"></div>
             <h1 class="show-main-title">${document.getElementById('show-title').value || 'SILHOUETTE QUIZ'}</h1>
             <div class="show-sub-title">${document.getElementById('show-subtitle').value || 'シルエットクイズ'}</div>
@@ -1200,10 +1242,10 @@ function renderCategoryTitle() {
     const modeTag = isStatic
         ? '<span class="show-cat-mode show-cat-mode-static">🔍 じっくり観察クイズ</span>'
         : '<span class="show-cat-mode show-cat-mode-slide">🎬 スライドクイズ</span>';
-    const catDecoShapes = buildFloatingShapesInnerHtml('category');
+    const catShapesLayer = buildFloatingShapesLayerHtml('category');
     showOverlay.innerHTML = `
         <div class="show-screen show-category" style="--cat-color: ${cat.color}">
-            <div class="thinking-shapes" aria-hidden="true">${catDecoShapes}</div>
+            ${catShapesLayer}
             <div class="show-round-label">Round ${roundNum} / ${total}</div>
             <h1 class="show-cat-name">${cat.displayName}</h1>
             ${modeTag}
@@ -1217,10 +1259,10 @@ function renderCategoryTitle() {
 
 function renderEnding() {
     const totalQ = setlist.reduce((sum, cat) => sum + cat.questions.length, 0);
-    const endDecoShapes = buildFloatingShapesInnerHtml('ending');
+    const endShapesLayer = buildFloatingShapesLayerHtml('ending');
     showOverlay.innerHTML = `
         <div class="show-screen show-ending">
-            <div class="thinking-shapes" aria-hidden="true">${endDecoShapes}</div>
+            ${endShapesLayer}
             <div class="show-deco-line"></div>
             <h1 class="show-ending-title">FINISH!</h1>
             <div class="show-ending-sub">お疲れ様でした</div>
@@ -1712,6 +1754,9 @@ async function applyConfigFromObject(config) {
     if (config.floatingShapes) {
         applyFloatingShapesFromConfig(config.floatingShapes);
     }
+    if (config.floatingShapesVisible) {
+        applyFloatingShapesVisibleFromConfig(config.floatingShapesVisible);
+    }
     applyThinkingShapesFromForm();
 
     if (config.sounds) {
@@ -1850,6 +1895,7 @@ async function saveConfig() {
                         seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true
                     },
                     floatingShapes: collectFloatingShapesForConfig(),
+                    floatingShapesVisible: collectFloatingShapesVisibleForConfig(),
                     sounds,
                     setlist: setlistPayload
                 };
@@ -1892,6 +1938,7 @@ async function saveConfig() {
             seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true
         },
         floatingShapes: collectFloatingShapesForConfig(),
+        floatingShapesVisible: collectFloatingShapesVisibleForConfig(),
         sounds,
         setlist: setlistPayload
     });
