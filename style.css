@@ -885,6 +885,19 @@ body.is-playing.play-hide-cursor * {
         0 0 80px rgba(0, 229, 255, 0.1);
     animation: frameGlow 3s ease-in-out infinite alternate;
 }
+.canvas-box.startup-splash-active {
+    background: #030308;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+}
+.canvas-box.startup-splash-active::before,
+.canvas-box.startup-splash-active::after,
+.canvas-box.startup-splash-active .corner-bl,
+.canvas-box.startup-splash-active .corner-br,
+.canvas-box.startup-splash-active .play-info-bar {
+    display: none;
+}
 @keyframes frameGlow {
     0% { box-shadow:
         0 0 0 3px var(--cat-color, var(--pink)),
@@ -1620,6 +1633,181 @@ input.fs-cell:focus {
         radial-gradient(ellipse at 70% 60%, rgba(0, 229, 255, 0.2) 0%, transparent 60%),
         linear-gradient(160deg, #0a0a14 0%, #1a1a2e 50%, #0d0d18 100%);
 }
+.show-startup {
+    overflow: hidden;
+    isolation: isolate;
+    background:
+        radial-gradient(circle at 50% 44%, rgba(255, 245, 205, 0.12) 0%, transparent 22%),
+        radial-gradient(ellipse at 34% 42%, rgba(255, 45, 138, 0.18) 0%, transparent 52%),
+        radial-gradient(ellipse at 68% 58%, rgba(0, 229, 255, 0.14) 0%, transparent 54%),
+        linear-gradient(145deg, #020206 0%, #070711 48%, #04040a 100%);
+}
+.show-startup::before,
+.show-startup::after {
+    content: '';
+    position: absolute;
+    inset: 24px;
+    border-radius: 28px;
+    pointer-events: none;
+    z-index: 1;
+}
+.show-startup::before {
+    border: none;
+    box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.48);
+}
+.show-startup::after {
+    inset: 42px;
+    border: none;
+    background:
+        radial-gradient(circle at 50% 50%, transparent 0 32%, rgba(255, 255, 255, 0.03) 45%, transparent 70%);
+    opacity: 0.65;
+    mask-image: radial-gradient(circle, #000 0%, transparent 72%);
+}
+.show-startup-aurora {
+    position: absolute;
+    inset: -25%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        conic-gradient(from 210deg at 50% 50%, transparent 0deg, rgba(255, 45, 138, 0.2) 70deg, rgba(255, 228, 45, 0.12) 125deg, rgba(0, 229, 255, 0.2) 210deg, transparent 300deg),
+        radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.16), transparent 34%);
+    filter: blur(52px) saturate(1.25);
+    opacity: 0.64;
+    animation: showAuroraSpin 14s linear infinite;
+}
+.show-startup-grid {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(255, 245, 205, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.07) 1px, transparent 1px);
+    background-size: 54px 54px;
+    mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+    opacity: 0.45;
+    animation: showStartupGridDrift 7s linear infinite;
+}
+@keyframes showAuroraSpin {
+    from { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.08); }
+    to { transform: rotate(360deg) scale(1); }
+}
+@keyframes showStartupGridDrift {
+    from { background-position: 0 0; }
+    to { background-position: 54px 54px; }
+}
+.show-startup-logo-frame {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: min(64vw, 56vh, 570px);
+    aspect-ratio: 1;
+    margin: 0 0 20px;
+    animation: showLogoEntrance 0.95s cubic-bezier(0.19, 1, 0.22, 1) both, showLogoFloat 5.5s ease-in-out 1s infinite;
+    filter:
+        drop-shadow(0 0 18px rgba(255, 245, 205, 0.38))
+        drop-shadow(0 0 42px rgba(255, 45, 138, 0.34))
+        drop-shadow(0 0 72px rgba(0, 229, 255, 0.2));
+}
+.show-startup-logo-frame::before {
+    content: '';
+    position: absolute;
+    inset: -9%;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, rgba(255, 228, 168, 0.22), transparent 54%),
+        radial-gradient(circle, rgba(255, 45, 138, 0.18), transparent 68%);
+    filter: blur(24px);
+    opacity: 0.78;
+    z-index: -2;
+}
+.show-startup-logo-ring {
+    display: none;
+}
+.show-startup-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+}
+.show-startup-logo-sheen {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+.show-startup-logo-sheen::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    left: -90%;
+    width: 52%;
+    height: 160%;
+    background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.08) 38%, rgba(255, 245, 205, 0.62) 50%, rgba(255, 255, 255, 0.08) 62%, transparent 100%);
+    transform: rotate(12deg);
+    animation: showLogoSheen 3.8s 1.2s ease-in-out infinite;
+}
+@keyframes showLogoEntrance {
+    from { opacity: 0; transform: translateY(24px) scale(0.86); filter: blur(8px); }
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes showLogoFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.012); }
+}
+@keyframes showLogoSheen {
+    0%, 34% { left: -90%; opacity: 0; }
+    48% { opacity: 1; }
+    68%, 100% { left: 138%; opacity: 0; }
+}
+.show-startup-brand {
+    position: relative;
+    z-index: 3;
+    color: transparent;
+    font-size: clamp(18px, 3vw, 34px);
+    font-weight: 900;
+    letter-spacing: 8px;
+    background: linear-gradient(180deg, #fff7d8 0%, #ffb36c 44%, #ff2d8a 72%, #00e5ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow: 0 0 28px rgba(255, 228, 168, 0.28);
+    animation: showSubIn 0.7s 0.35s ease both;
+}
+.show-startup-prompt {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 18px;
+    color: rgba(255, 245, 205, 0.86);
+    text-transform: uppercase;
+    animation: showStartupPromptPulse 1.8s ease-in-out infinite;
+}
+.show-startup-prompt-main {
+    font-size: clamp(13px, 1.6vw, 18px);
+    font-weight: 800;
+    letter-spacing: 5px;
+    text-shadow:
+        0 0 14px rgba(255, 228, 168, 0.46),
+        0 0 28px rgba(0, 229, 255, 0.22);
+}
+.show-startup-prompt-sub {
+    font-size: clamp(10px, 1.1vw, 13px);
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.48);
+}
+@keyframes showStartupPromptPulse {
+    0%, 100% { opacity: 0.48; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-2px); }
+}
 .show-main-title {
     font-size: clamp(40px, 8vw, 90px);
     font-weight: 900;
@@ -1687,6 +1875,7 @@ input.fs-cell:focus {
 .show-screen .thinking-shapes {
     z-index: 1;
 }
+.show-startup > *:not(.show-startup-aurora):not(.show-startup-grid),
 .show-opening > *:not(.show-float-layer):not(.thinking-shapes) {
     position: relative;
     z-index: 2;

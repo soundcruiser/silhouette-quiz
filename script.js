@@ -13,7 +13,7 @@ let thinkingLoopIntervalId = null;
 let thinkingLoopPreviewTimer = null;
 /** BGM 線形フェードの打ち消し用（新しいフェードや即時同期で世代を進める） */
 let bgmThinkingFadeGen = 0;
-let showPhase = 'opening'; // 'opening' | 'category' | 'quiz' | 'ending'
+let showPhase = 'opening'; // 'startup' | 'opening' | 'category' | 'quiz' | 'ending'
 
 let controlsTimer = null;
 /** プレイ中・画面上部へ近づいたときのナビ表示用 */
@@ -1175,7 +1175,7 @@ function switchMode(mode) {
         clearTimeout(topChromeTimer);
         playChromeWasInTopZone = false;
         playChromeWasInBottomZone = false;
-        enterShowPhase('opening');
+        enterStartupSplash();
         resetPlayCursorIdle();
     } else {
         hideThinkingOverlay();
@@ -1196,7 +1196,27 @@ function switchMode(mode) {
 }
 
 // --- Show Flow ---
+function enterStartupSplash() {
+    hideThinkingOverlay();
+    stopOpeningLoop();
+    stopAllClonedCustomSounds();
+    stopBGM();
+    showPhase = 'startup';
+    resetAnimState();
+    loadQuizId++;
+    quizLoading = false;
+
+    quizControls.style.display = 'none';
+    showControlsEl.style.display = 'none';
+    canvasBox?.classList.add('startup-splash-active');
+    showOverlay.style.display = 'flex';
+    showOverlay.className = 'show-overlay visible';
+    renderStartupSplash();
+    sendRemoteState();
+}
+
 function enterShowPhase(phase) {
+    canvasBox?.classList.remove('startup-splash-active');
     hideThinkingOverlay();
     stopOpeningLoop();
     stopAllClonedCustomSounds();
@@ -1241,7 +1261,9 @@ function advanceShow() {
     if (now - lastAdvanceTime < 500) return;
     lastAdvanceTime = now;
 
-    if (showPhase === 'opening') {
+    if (showPhase === 'startup') {
+        enterShowPhase('opening');
+    } else if (showPhase === 'opening') {
         if (setlist.length === 0) return;
         currentSetIdx = 0;
         currentQIdx = 0;
@@ -1254,9 +1276,29 @@ function advanceShow() {
 }
 
 function hideShowOverlay() {
+    canvasBox?.classList.remove('startup-splash-active');
     showOverlay.style.display = 'none';
     showOverlay.className = 'show-overlay';
     showOverlay.innerHTML = '';
+}
+
+function renderStartupSplash() {
+    showOverlay.innerHTML = `
+        <div class="show-screen show-startup">
+            <div class="show-startup-aurora" aria-hidden="true"></div>
+            <div class="show-startup-grid" aria-hidden="true"></div>
+            <div class="show-startup-logo-frame">
+                <span class="show-startup-logo-ring" aria-hidden="true"></span>
+                <img class="show-startup-logo" src="./icons/opening-logo.png" alt="シルエットクイズ">
+                <span class="show-startup-logo-sheen" aria-hidden="true"></span>
+            </div>
+            <div class="show-startup-brand">SILHOUETTE QUIZ</div>
+            <div class="show-startup-prompt">
+                <span class="show-startup-prompt-main">PRESS ENTER / SPACE</span>
+                <span class="show-startup-prompt-sub">to start the show</span>
+            </div>
+        </div>
+    `;
 }
 
 function renderOpening() {
@@ -1270,7 +1312,7 @@ function renderOpening() {
     // delay/dur: アニメーションの遅延と周期（秒）
     // ※見た目の微調整はCSSの .show-float-tag も参照
     const tags = [];
-    const copies = Math.max(3, Math.ceil(50 / setlist.length));
+    const copies = setlist.length > 0 ? Math.max(3, Math.ceil(50 / setlist.length)) : 0;
     for (let c = 0; c < copies; c++) {
         setlist.forEach((cat) => {
             const top = Math.random() * 85;
