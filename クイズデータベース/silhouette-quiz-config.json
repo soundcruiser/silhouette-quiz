@@ -1,0 +1,179 @@
+{
+  "version": 12,
+  "speeds": [
+    "0.5",
+    "0.5",
+    "0.5"
+  ],
+  "countdown": {
+    "enabled": true,
+    "seconds": "1"
+  },
+  "showTitle": {
+    "main": "SILHOUETTE QUIZ",
+    "sub": "シルエットクイズ"
+  },
+  "thinkingTime": {
+    "message": "thinkingTime",
+    "seEnabled": true
+  },
+  "floatingShapes": {
+    "opening": [
+      "?",
+      "!",
+      "★",
+      "?",
+      "●",
+      "▲",
+      "＋",
+      "◆"
+    ],
+    "category": [
+      "?",
+      "!",
+      "★",
+      "?",
+      "●",
+      "▲",
+      "＋",
+      "◆"
+    ],
+    "ending": [
+      "?",
+      "!",
+      "★",
+      "?",
+      "●",
+      "▲",
+      "＋",
+      "◆"
+    ],
+    "thinking": [
+      "?",
+      "!",
+      "★",
+      "?",
+      "●",
+      "▲",
+      "＋",
+      "◆"
+    ]
+  },
+  "floatingShapesVisible": {
+    "opening": true,
+    "category": true,
+    "ending": false,
+    "thinking": false
+  },
+  "sounds": {
+    "bgm": {
+      "file": "_sounds/bgm.mp3",
+      "volume": 0.12
+    },
+    "start1": {
+      "file": "_sounds/start1.mp3",
+      "volume": 0.5
+    },
+    "start2": {
+      "file": "_sounds/start2.mp3",
+      "volume": 0.5
+    },
+    "start3": {
+      "file": "_sounds/start3.mp3",
+      "volume": 0.5
+    },
+    "reveal": {
+      "file": "_sounds/reveal.mp3",
+      "volume": 0.5
+    },
+    "countdown": {
+      "file": "_sounds/countdown.mp3",
+      "volume": 0.95
+    },
+    "opening": {
+      "file": "_sounds/opening.mp3",
+      "volume": 0.5
+    },
+    "category": {
+      "file": "_sounds/category.mp3",
+      "volume": 0.5
+    },
+    "qIntro": {
+      "file": null,
+      "volume": 0.5
+    },
+    "qAfter": {
+      "file": null,
+      "volume": 0.5
+    },
+    "ending": {
+      "file": "_sounds/ending.wav",
+      "volume": 0.27
+    },
+    "thinkingLoop": {
+      "file": "_sounds/thinkingLoop.mp3",
+      "volume": 0.2
+    }
+  },
+  "setlist": [
+    {
+      "folder": "ロゴ",
+      "displayName": "ロゴ",
+      "color": "#ff2d8a",
+      "mode": "slide",
+      "questions": [
+        {
+          "name": "7.png",
+          "fullPath": "ロゴ/7.png",
+          "isColor": false
+        }
+      ]
+    },
+    {
+      "folder": "乗り物",
+      "displayName": "乗り物",
+      "color": "#00e5ff",
+      "mode": "slide",
+      "questions": [
+        {
+          "name": "1.png",
+          "fullPath": "乗り物/1.png",
+          "isColor": false
+        }
+      ]
+    },
+    {
+      "folder": "野菜",
+      "displayName": "野菜",
+      "color": "#ff8a2d",
+      "mode": "slide",
+      "questions": [
+        {
+          "name": "7.png",
+          "fullPath": "野菜/7.png",
+          "isColor": false
+        }
+      ]
+    },
+    {
+      "folder": "アニメ",
+      "displayName": "アニメ",
+      "color": "#a78bfa",
+      "mode": "slide",
+      "questions": [
+        {
+          "name": "4.png",
+          "fullPath": "アニメ/4.png",
+          "isColor": false
+        }
+      ]
+    },
+    {
+      "folder": "スポーツ",
+      "displayName": "スポーツ",
+      "color": "#ff8a2d",
+      "mode": "slide",
+      "questions": []
+    }
+  ]
+}
