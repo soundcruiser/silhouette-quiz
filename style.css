@@ -1423,6 +1423,79 @@ body.is-playing nav {
     margin-top: 2px;
 }
 
+.floating-shapes-details {
+    margin-top: 10px;
+    flex-basis: 100%;
+    width: 100%;
+}
+.floating-shapes-summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    font-weight: 700;
+    font-size: 13px;
+}
+.floating-shapes-summary::-webkit-details-marker {
+    display: none;
+}
+.floating-shapes-body {
+    margin-top: 10px;
+    padding: 10px 4px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.floating-shapes-hint {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.45;
+}
+.floating-shapes-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+}
+.floating-shapes-row-label {
+    flex: 0 0 5.5em;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+.floating-shapes-cells {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+input.fs-cell {
+    width: 2.5em;
+    min-width: 2.5em;
+    max-width: 3.2em;
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 18px;
+    line-height: 1.2;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+}
+input.fs-cell:focus {
+    outline: none;
+    border-color: var(--pink);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--pink) 35%, transparent);
+}
+
 /* ===== REVEAL EFFECT ===== */
 @keyframes revealPop {
     0% { transform: translateX(-50%) scale(0.7); opacity: 0.3; }
@@ -1491,6 +1564,7 @@ body.is-playing nav {
 }
 
 .show-screen {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1572,9 +1646,17 @@ body.is-playing nav {
     pointer-events: none;
     z-index: 0;
 }
-.show-opening > *:not(.show-float-layer) {
-    position: relative;
+.show-screen .thinking-shapes {
     z-index: 1;
+}
+.show-opening > *:not(.show-float-layer):not(.thinking-shapes) {
+    position: relative;
+    z-index: 2;
+}
+.show-category > *:not(.thinking-shapes),
+.show-ending > *:not(.thinking-shapes) {
+    position: relative;
+    z-index: 2;
 }
 /* ── フローティングタグ調整（手動） ──
    opacity: 存在感（0.1=控えめ, 0.2=普通, 0.3=しっかり見える）

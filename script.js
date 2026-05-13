@@ -104,6 +104,88 @@ const THINKING_BGM_DUCK_MULT = 0.2;
 const THINKING_BGM_DUCK_OUT_MS = 380;
 const THINKING_BGM_DUCK_IN_MS = 520;
 
+/** 浮遊シェイプ（ショー画面・考え中オーバーレイの装飾8点）をイベント別に差し替え */
+const FLOATING_SHAPE_EVENTS = /** @type {const} */ (['opening', 'category', 'ending', 'thinking']);
+const DEFAULT_FLOATING_SHAPES_ROW = ['?', '!', '★', '?', '●', '▲', '＋', '◆'];
+
+function normalizeFloatingShapesRow(raw) {
+    const d = [...DEFAULT_FLOATING_SHAPES_ROW];
+    if (raw == null) return d;
+    if (Array.isArray(raw)) {
+        const out = [];
+        for (let i = 0; i < 8; i++) {
+            const v = raw[i] != null ? String(raw[i]).trim() : '';
+            out.push(v || d[i]);
+        }
+        return out;
+    }
+    if (typeof raw === 'string') {
+        const parts = Array.from(raw);
+        const out = [];
+        for (let i = 0; i < 8; i++) out.push(parts[i] || d[i]);
+        return out;
+    }
+    return d;
+}
+
+function escapeForShapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+function getFloatingShapesForEvent(event) {
+    const fromInputs = Array.from({ length: 8 }, (_, i) => {
+        const el = document.getElementById(`fs-${event}-${i}`);
+        return el ? el.value.trim() : '';
+    });
+    return normalizeFloatingShapesRow(fromInputs);
+}
+
+function buildFloatingShapesInnerHtml(eventKey) {
+    const chars = getFloatingShapesForEvent(eventKey);
+    let html = '';
+    for (let n = 1; n <= 8; n++) {
+        html += `<span class="ts-shape ts-shape-${n}">${escapeForShapeHtml(chars[n - 1])}</span>`;
+    }
+    return html;
+}
+
+function applyThinkingShapesFromForm() {
+    const host = document.getElementById('thinking-shapes-root');
+    if (!host) return;
+    host.innerHTML = buildFloatingShapesInnerHtml('thinking');
+}
+
+function collectFloatingShapesForConfig() {
+    const o = {};
+    for (const ev of FLOATING_SHAPE_EVENTS) {
+        o[ev] = getFloatingShapesForEvent(ev);
+    }
+    return o;
+}
+
+function applyFloatingShapesFromConfig(floatingShapes) {
+    if (!floatingShapes || typeof floatingShapes !== 'object') return;
+    for (const ev of FLOATING_SHAPE_EVENTS) {
+        const row = normalizeFloatingShapesRow(floatingShapes[ev]);
+        for (let i = 0; i < 8; i++) {
+            const inp = document.getElementById(`fs-${ev}-${i}`);
+            if (inp) inp.value = row[i];
+        }
+    }
+}
+
+function initFloatingShapesInputDelegation() {
+    document.querySelector('.floating-shapes-details')?.addEventListener('input', (e) => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (!t.classList?.contains('fs-cell')) return;
+        if (thinkingOverlayVisible && t.id && t.id.startsWith('fs-thinking-')) {
+            applyThinkingShapesFromForm();
+        }
+    });
+}
+
 function getVolume(slot) { return customSounds[slot].volume; }
 
 function isThinkingLoopSeActiveForBgmDuck() {
@@ -1089,10 +1171,12 @@ function renderOpening() {
         });
     }
     const floatingTags = tags.join('');
+    const decoShapes = buildFloatingShapesInnerHtml('opening');
 
     showOverlay.innerHTML = `
         <div class="show-screen show-opening">
             <div class="show-float-layer">${floatingTags}</div>
+            <div class="thinking-shapes" aria-hidden="true">${decoShapes}</div>
             <div class="show-deco-line"></div>
             <h1 class="show-main-title">${document.getElementById('show-title').value || 'SILHOUETTE QUIZ'}</h1>
             <div class="show-sub-title">${document.getElementById('show-subtitle').value || 'シルエットクイズ'}</div>
@@ -1116,8 +1200,10 @@ function renderCategoryTitle() {
     const modeTag = isStatic
         ? '<span class="show-cat-mode show-cat-mode-static">🔍 じっくり観察クイズ</span>'
         : '<span class="show-cat-mode show-cat-mode-slide">🎬 スライドクイズ</span>';
+    const catDecoShapes = buildFloatingShapesInnerHtml('category');
     showOverlay.innerHTML = `
         <div class="show-screen show-category" style="--cat-color: ${cat.color}">
+            <div class="thinking-shapes" aria-hidden="true">${catDecoShapes}</div>
             <div class="show-round-label">Round ${roundNum} / ${total}</div>
             <h1 class="show-cat-name">${cat.displayName}</h1>
             ${modeTag}
@@ -1131,8 +1217,10 @@ function renderCategoryTitle() {
 
 function renderEnding() {
     const totalQ = setlist.reduce((sum, cat) => sum + cat.questions.length, 0);
+    const endDecoShapes = buildFloatingShapesInnerHtml('ending');
     showOverlay.innerHTML = `
         <div class="show-screen show-ending">
+            <div class="thinking-shapes" aria-hidden="true">${endDecoShapes}</div>
             <div class="show-deco-line"></div>
             <h1 class="show-ending-title">FINISH!</h1>
             <div class="show-ending-sub">お疲れ様でした</div>
@@ -1171,6 +1259,7 @@ function showThinkingOverlay() {
     if (thinkingOverlayVisible) return;
     const overlay = document.getElementById('thinking-overlay');
     if (!overlay) return;
+    applyThinkingShapesFromForm();
     syncThinkingOverlayMessage();
     thinkingOverlayVisible = true;
     overlay.classList.add('visible');
@@ -1620,6 +1709,11 @@ async function applyConfigFromObject(config) {
         }
     }
 
+    if (config.floatingShapes) {
+        applyFloatingShapesFromConfig(config.floatingShapes);
+    }
+    applyThinkingShapesFromForm();
+
     if (config.sounds) {
         if (config.sounds.start && !config.sounds.start1) {
             config.sounds.start1 = config.sounds.start;
@@ -1737,7 +1831,7 @@ async function saveConfig() {
                     sounds[slot] = { file: packPaths[slot], volume: customSounds[slot].volume };
                 }
                 const config = {
-                    version: 11,
+                    version: 12,
                     speeds: [
                         document.getElementById('speed1').value,
                         document.getElementById('speed2').value,
@@ -1755,6 +1849,7 @@ async function saveConfig() {
                         message: document.getElementById('thinking-time-text')?.value ?? 'thinkingTime',
                         seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true
                     },
+                    floatingShapes: collectFloatingShapesForConfig(),
                     sounds,
                     setlist: setlistPayload
                 };
@@ -1778,7 +1873,7 @@ async function saveConfig() {
         sounds[slot] = { file: customSounds[slot].fileName, volume: customSounds[slot].volume };
     }
     downloadConfigJsonFile({
-        version: 11,
+        version: 12,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -1796,6 +1891,7 @@ async function saveConfig() {
             message: document.getElementById('thinking-time-text')?.value ?? 'thinkingTime',
             seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true
         },
+        floatingShapes: collectFloatingShapesForConfig(),
         sounds,
         setlist: setlistPayload
     });
@@ -2006,6 +2102,8 @@ playBottom?.addEventListener('mouseleave', () => {
 });
 
 // --- 10. Auto-restore previous folder on load ---
+initFloatingShapesInputDelegation();
+applyThinkingShapesFromForm();
 restoreRootHandle();
 
 // --- 11. Remote Control (PeerJS) ---
