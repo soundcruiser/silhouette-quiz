@@ -307,7 +307,9 @@ function updateUI(state) {
     } else {
         infoPhase.textContent = state.mode === 'static' ? 'じっくり観察' : 'スライド';
         infoMain.textContent = state.category || '—';
-        infoSub.textContent = state.totalQ ? `Q${state.question} / ${state.totalQ}` : '';
+        let sub = state.totalQ ? `Q${state.question} / ${state.totalQ}` : '';
+        if (state.thinkingWait) sub = sub ? `${sub} · WAIT` : 'WAIT';
+        infoSub.textContent = sub;
         ctrlShow.classList.add('hidden');
         ctrlQuiz.classList.remove('hidden');
         speedRow.style.display = state.mode === 'static' ? 'none' : '';

@@ -6,6 +6,11 @@ let currentQIdx = 0;
 let editingCategoryIdx = -1;
 let objectUrls = [];
 let animState = { playing: false, paused: false, lastSpeed: 2, timerId: null, startTime: 0, elapsed: 0, countingDown: false };
+/** スライド再生終了後〜次の 1/2/3 までの「考え中」オーバーレイ */
+let thinkingOverlayVisible = false;
+let thinkingLoopAudioEl = null;
+let thinkingLoopIntervalId = null;
+let thinkingLoopPreviewTimer = null;
 let showPhase = 'opening'; // 'opening' | 'category' | 'quiz' | 'ending'
 
 let controlsTimer = null;
@@ -49,7 +54,8 @@ const customSounds = {
     category:  { audio: null, fileName: null, volume: 0.5 },
     qIntro:    { audio: null, fileName: null, volume: 0.5 },
     qAfter:    { audio: null, fileName: null, volume: 0.5 },
-    ending:    { audio: null, fileName: null, volume: 0.5 }
+    ending:    { audio: null, fileName: null, volume: 0.5 },
+    thinkingLoop: { audio: null, fileName: null, volume: 0.35 }
 };
 
 let previewAudio = null;
@@ -89,7 +95,7 @@ const OPENING_LOOP_REFILL_MS = 320;
 const BUNDLED_CONFIG_FILENAME = 'silhouette-quiz-config.json';
 /** 保存時にサウンドを書き出すサブフォルダ（_ 始まりのためカテゴリ追加セレクトには出ない） */
 const SOUND_PACK_DIR = '_sounds';
-const SOUND_CONFIG_SLOTS = ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending'];
+const SOUND_CONFIG_SLOTS = ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending', 'thinkingLoop'];
 
 function getVolume(slot) { return customSounds[slot].volume; }
 
@@ -157,6 +163,42 @@ function playCountdownTick(remaining) {
     playCustomOrDefault('countdown', () => {
         playTone(cdTones[remaining % cdTones.length], 0.12, 'sine', v * 0.3);
     });
+}
+
+function stopThinkingLoopSound() {
+    if (thinkingLoopIntervalId != null) {
+        clearInterval(thinkingLoopIntervalId);
+        thinkingLoopIntervalId = null;
+    }
+    if (thinkingLoopAudioEl) {
+        try {
+            thinkingLoopAudioEl.pause();
+            thinkingLoopAudioEl.currentTime = 0;
+        } catch (e) { /* ignore */ }
+        thinkingLoopAudioEl = null;
+    }
+}
+
+/** 考え中オーバーレイ表示中のループ SE（設定のオン時のみ） */
+function startThinkingLoopSound() {
+    stopThinkingLoopSound();
+    const toggle = document.getElementById('thinking-se-enabled');
+    if (!toggle || !toggle.checked) return;
+    if (customSounds.thinkingLoop.audio) {
+        const a = customSounds.thinkingLoop.audio.cloneNode();
+        a.loop = true;
+        a.volume = getVolume('thinkingLoop');
+        thinkingLoopAudioEl = a;
+        a.play().catch(() => { thinkingLoopAudioEl = null; });
+    } else {
+        const v = getVolume('thinkingLoop');
+        const tick = () => {
+            playTone(392, 0.055, 'sine', v * 0.11);
+            setTimeout(() => playTone(523, 0.07, 'sine', v * 0.09), 130);
+        };
+        tick();
+        thinkingLoopIntervalId = setInterval(tick, 2100);
+    }
 }
 
 function invalidateOpeningDecodedBuffer() {
@@ -491,9 +533,41 @@ function testSound(slot) {
         playQAfterSound();
     } else if (slot === 'ending') {
         if (!customSounds.ending.audio) playEndingSound();
+    } else if (slot === 'thinkingLoop') {
+        if (thinkingLoopPreviewTimer) {
+            clearTimeout(thinkingLoopPreviewTimer);
+            thinkingLoopPreviewTimer = null;
+        }
+        stopThinkingLoopSound();
+        const btn = document.getElementById('sound-test-thinkingLoop');
+        const resetBtn = () => { if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; } };
+        if (customSounds.thinkingLoop.audio) {
+            const a = customSounds.thinkingLoop.audio.cloneNode();
+            a.loop = true;
+            a.volume = getVolume('thinkingLoop');
+            previewAudio = a;
+            a.play().catch(() => {});
+            if (btn) { btn.classList.add('playing'); btn.textContent = '■'; }
+            thinkingLoopPreviewTimer = setTimeout(() => {
+                a.pause();
+                a.currentTime = 0;
+                previewAudio = null;
+                thinkingLoopPreviewTimer = null;
+                resetBtn();
+            }, 2500);
+        } else {
+            const v = getVolume('thinkingLoop');
+            playTone(392, 0.055, 'sine', v * 0.11);
+            setTimeout(() => playTone(523, 0.07, 'sine', v * 0.09), 130);
+            if (btn) { btn.classList.add('playing'); btn.textContent = '■'; }
+            thinkingLoopPreviewTimer = setTimeout(() => {
+                thinkingLoopPreviewTimer = null;
+                resetBtn();
+            }, 900);
+        }
     }
 
-    if (customSounds[slot].audio && slot !== 'bgm') {
+    if (customSounds[slot].audio && slot !== 'bgm' && slot !== 'thinkingLoop') {
         previewAudio = customSounds[slot].audio.cloneNode();
         previewAudio.volume = getVolume(slot);
         previewAudio.play().catch(() => {});
@@ -505,6 +579,10 @@ function testSound(slot) {
 }
 
 function stopAllPreviews() {
+    if (thinkingLoopPreviewTimer) {
+        clearTimeout(thinkingLoopPreviewTimer);
+        thinkingLoopPreviewTimer = null;
+    }
     if (previewAudio) {
         previewAudio.pause();
         previewAudio.currentTime = 0;
@@ -512,7 +590,8 @@ function stopAllPreviews() {
     }
     stopAllClonedCustomSounds();
     stopOpeningLoop();
-    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending']) {
+    stopThinkingLoopSound();
+    for (const slot of SOUND_CONFIG_SLOTS) {
         const btn = document.getElementById('sound-test-' + slot);
         if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; }
     }
@@ -831,6 +910,7 @@ function switchMode(mode) {
         currentQIdx = 0;
         enterShowPhase('opening');
     } else {
+        hideThinkingOverlay();
         stopAllClonedCustomSounds();
         stopBGM();
         stopOpeningLoop();
@@ -840,6 +920,7 @@ function switchMode(mode) {
 
 // --- Show Flow ---
 function enterShowPhase(phase) {
+    hideThinkingOverlay();
     stopOpeningLoop();
     stopAllClonedCustomSounds();
     showPhase = phase;
@@ -995,7 +1076,41 @@ function getCurrentMode() {
     return setlist[currentSetIdx]?.mode || 'slide';
 }
 
+function syncThinkingOverlayMessage() {
+    const main = document.getElementById('thinking-main-text');
+    const input = document.getElementById('thinking-time-text');
+    if (!main) return;
+    const raw = (input && input.value.trim()) ? input.value : 'thinkingTime';
+    main.textContent = raw;
+}
+
+function showThinkingOverlay() {
+    if (thinkingOverlayVisible) return;
+    const overlay = document.getElementById('thinking-overlay');
+    if (!overlay) return;
+    syncThinkingOverlayMessage();
+    thinkingOverlayVisible = true;
+    overlay.classList.add('visible');
+    overlay.setAttribute('aria-hidden', 'false');
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    startThinkingLoopSound();
+    sendRemoteState();
+}
+
+function hideThinkingOverlay() {
+    const overlay = document.getElementById('thinking-overlay');
+    if (overlay) {
+        overlay.classList.remove('visible');
+        overlay.setAttribute('aria-hidden', 'true');
+    }
+    const wasVisible = thinkingOverlayVisible;
+    thinkingOverlayVisible = false;
+    stopThinkingLoopSound();
+    if (wasVisible) sendRemoteState();
+}
+
 async function loadQuiz() {
+    hideThinkingOverlay();
     const questions = getCurrentQuestions();
     if (questions.length === 0) return;
     resetAnimState();
@@ -1067,6 +1182,7 @@ function startAnim(speedNum) {
     if (animState.countingDown || animState.playing) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
+    hideThinkingOverlay();
     resetAnimState();
     animState.lastSpeed = speedNum;
 
@@ -1137,6 +1253,9 @@ function executeAnim(speedNum) {
         quizImg.style.left = '0';
         quizImg.style.transform = 'translateX(110vw)';
         resetAnimState();
+        if (showPhase === 'quiz' && !quizLoading && getCurrentMode() === 'slide') {
+            showThinkingOverlay();
+        }
     };
 }
 
@@ -1195,6 +1314,7 @@ function reveal() {
     if (getCurrentQuestions().length === 0) return;
     if (animState.countingDown) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    hideThinkingOverlay();
     playRevealSound();
     resetAnimState();
 
@@ -1404,6 +1524,18 @@ async function applyConfigFromObject(config) {
         if (config.showTitle.sub) document.getElementById('show-subtitle').value = config.showTitle.sub;
     }
 
+    if (config.thinkingTime) {
+        const tt = config.thinkingTime;
+        if (tt.message !== undefined) {
+            const tel = document.getElementById('thinking-time-text');
+            if (tel) tel.value = String(tt.message);
+        }
+        if (tt.seEnabled !== undefined) {
+            const ch = document.getElementById('thinking-se-enabled');
+            if (ch) ch.checked = !!tt.seEnabled;
+        }
+    }
+
     if (config.sounds) {
         if (config.sounds.start && !config.sounds.start1) {
             config.sounds.start1 = config.sounds.start;
@@ -1521,7 +1653,7 @@ async function saveConfig() {
                     sounds[slot] = { file: packPaths[slot], volume: customSounds[slot].volume };
                 }
                 const config = {
-                    version: 10,
+                    version: 11,
                     speeds: [
                         document.getElementById('speed1').value,
                         document.getElementById('speed2').value,
@@ -1534,6 +1666,10 @@ async function saveConfig() {
                     showTitle: {
                         main: document.getElementById('show-title').value,
                         sub: document.getElementById('show-subtitle').value
+                    },
+                    thinkingTime: {
+                        message: document.getElementById('thinking-time-text')?.value ?? 'thinkingTime',
+                        seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true
                     },
                     sounds,
                     setlist: setlistPayload
@@ -1558,7 +1694,7 @@ async function saveConfig() {
         sounds[slot] = { file: customSounds[slot].fileName, volume: customSounds[slot].volume };
     }
     downloadConfigJsonFile({
-        version: 10,
+        version: 11,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -1571,6 +1707,10 @@ async function saveConfig() {
         showTitle: {
             main: document.getElementById('show-title').value,
             sub: document.getElementById('show-subtitle').value
+        },
+        thinkingTime: {
+            message: document.getElementById('thinking-time-text')?.value ?? 'thinkingTime',
+            seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true
         },
         sounds,
         setlist: setlistPayload
@@ -1673,6 +1813,10 @@ function escapeAction() {
         progressBar.style.transitionDuration = '0s';
         timerDisplay.textContent = '';
         timerDisplay.classList.remove('warning');
+        return;
+    }
+    if (thinkingOverlayVisible) {
+        hideThinkingOverlay();
         return;
     }
 }
@@ -1881,6 +2025,7 @@ function sendRemoteState() {
         totalQ: getCurrentQuestions().length,
         mode: getCurrentMode(),
         playing: animState.playing,
-        paused: animState.paused
+        paused: animState.paused,
+        thinkingWait: thinkingOverlayVisible
     });
 }

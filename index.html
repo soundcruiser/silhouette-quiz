@@ -42,6 +42,14 @@
             </label>
             <input type="number" id="countdown-sec" value="3" class="speed-input" min="1" max="10" step="1">
         </div>
+        <div class="title-group thinking-config-group">
+            <span class="panel-label">スライド後の考え中</span>
+            <textarea id="thinking-time-text" class="title-input thinking-time-input" rows="2" placeholder="メイン表示">thinkingTime</textarea>
+            <label class="toggle-label thinking-se-toggle">
+                <input type="checkbox" id="thinking-se-enabled" checked>
+                <span class="panel-label">考え中ループSE（無音の埋め）</span>
+            </label>
+        </div>
         <div class="bulk-group">
             <button class="small-btn" onclick="bulkColor(true)">すべてカラー</button>
             <button class="small-btn" onclick="bulkColor(false)">すべてシルエット</button>
@@ -116,6 +124,15 @@
                 <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('countdown', this)" hidden></label>
                 <button class="small-btn sound-test-btn" id="sound-test-countdown" onclick="testSound('countdown')">▶</button>
                 <button class="small-btn sound-clear-btn" onclick="clearCustomSound('countdown')">✕</button>
+            </div>
+            <div class="sound-slot" data-slot="thinkingLoop">
+                <span class="sound-label">💭 考え中ループ</span>
+                <span class="sound-file-name" id="sound-name-thinkingLoop">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-thinkingLoop" min="0" max="100" value="35" oninput="updateVolume('thinkingLoop', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-thinkingLoop">35</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('thinkingLoop', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-thinkingLoop" onclick="testSound('thinkingLoop')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('thinkingLoop')">✕</button>
             </div>
             <div class="sound-slot" data-slot="opening">
                 <span class="sound-label">🎬 オープニング</span>
@@ -228,6 +245,36 @@
                     <span class="countdown-number" id="countdown-number"></span>
                 </div>
                 <div class="show-overlay" id="show-overlay"></div>
+                <div class="thinking-overlay" id="thinking-overlay" aria-hidden="true">
+                    <div class="thinking-scanlines" aria-hidden="true"></div>
+                    <div class="thinking-noise" aria-hidden="true"></div>
+                    <div class="thinking-dots" aria-hidden="true"></div>
+                    <div class="thinking-beam" aria-hidden="true"></div>
+                    <div class="thinking-shapes" aria-hidden="true">
+                        <span class="ts-shape ts-shape-1">?</span>
+                        <span class="ts-shape ts-shape-2">!</span>
+                        <span class="ts-shape ts-shape-3">★</span>
+                        <span class="ts-shape ts-shape-4">?</span>
+                        <span class="ts-shape ts-shape-5">●</span>
+                        <span class="ts-shape ts-shape-6">▲</span>
+                        <span class="ts-shape ts-shape-7">＋</span>
+                        <span class="ts-shape ts-shape-8">◆</span>
+                    </div>
+                    <div class="thinking-stage">
+                        <div class="thinking-title" aria-label="THINKING WAIT">
+                            <span class="tt-line tt-line-1">
+                                <span class="tt-char" style="--i:0">T</span><span class="tt-char" style="--i:1">H</span><span class="tt-char" style="--i:2">I</span><span class="tt-char" style="--i:3">N</span><span class="tt-char" style="--i:4">K</span><span class="tt-char" style="--i:5">I</span><span class="tt-char" style="--i:6">N</span><span class="tt-char" style="--i:7">G</span>
+                            </span>
+                            <span class="tt-line tt-line-2">
+                                <span class="tt-char" style="--i:0">W</span><span class="tt-char" style="--i:1">A</span><span class="tt-char" style="--i:2">I</span><span class="tt-char" style="--i:3">T</span>
+                            </span>
+                        </div>
+                        <p class="thinking-main" id="thinking-main-text"></p>
+                        <div class="thinking-loading-dots" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="play-bottom">
@@ -290,7 +337,7 @@
         <div class="shortcut-row"><span>スキップ / キャンセル</span><kbd>Esc</kbd></div>
         <div class="shortcut-row"><span>フルスクリーン</span><kbd>F</kbd></div>
         <div class="shortcut-row"><span>ヘルプ表示</span><kbd>H</kbd> / <kbd>?</kbd></div>
-        <p class="help-note">※ カウントダウン中・スライド再生中は ←→ 1 2 3 無効<br>※ じっくりモードでは 1 2 3 P R 無効（正解と←→のみ）</p>
+        <p class="help-note">※ カウントダウン中・スライド再生中は ←→ 1 2 3 無効<br>※ じっくりモードでは 1 2 3 P R 無効（正解と←→のみ）<br>※ スライド終了後の「考え中」表示は 1 2 3 / 正解 / ←→ / Esc で抜けられます</p>
     </div>
 </div>
 
