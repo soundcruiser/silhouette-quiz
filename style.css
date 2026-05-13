@@ -1321,6 +1321,53 @@ body.is-playing nav {
     text-transform: uppercase;
 }
 .help-section-title:first-of-type { margin-top: 0; }
+/* ===== LOAD CONFIG MODAL ===== */
+.load-config-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 20, 0.88);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    animation: fadeIn 0.2s ease;
+}
+.load-config-modal.visible { display: flex; }
+
+.load-modal-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    max-width: 440px;
+    box-shadow: var(--shadow), 0 0 40px rgba(0, 229, 255, 0.08);
+}
+.load-modal-title {
+    color: var(--pink);
+    margin: 0 0 16px;
+    font-size: 20px;
+}
+.load-modal-text {
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0 0 12px;
+}
+.load-modal-hint {
+    color: #888;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0 0 20px;
+}
+.load-modal-hint strong { color: var(--cyan); font-weight: 600; }
+.load-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
 .help-note {
     margin: 14px 0 0;
     font-size: 12px;

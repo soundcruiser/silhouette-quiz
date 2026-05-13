@@ -24,6 +24,7 @@ const canvasBox = document.getElementById('canvas-box');
 const progressBar = document.getElementById('progress-bar');
 const timerDisplay = document.getElementById('timer-display');
 const helpOverlay = document.getElementById('help-overlay');
+const loadConfigModal = document.getElementById('load-config-modal');
 const setlistContainer = document.getElementById('setlist-container');
 const setlistEmpty = document.getElementById('setlist-empty');
 const categoryDetail = document.getElementById('category-detail');
@@ -1549,10 +1550,60 @@ async function saveConfig() {
 }
 
 async function loadConfig(input) {
-    if (!rootHandle) { alert("先にフォルダを接続してください"); input.value = ''; return; }
+    if (!rootHandle) { alert("先にフォルダを接続するか、ナビの「読込」からフォルダを選んでください"); input.value = ''; return; }
     try {
         const text = await input.files[0].text();
         await applyConfigFromObject(JSON.parse(text));
+    } catch (e) {
+        alert('設定の読み込みに失敗しました: ' + (e.message || String(e)));
+    }
+    input.value = '';
+}
+
+function openLoadConfigModal() {
+    if (!loadConfigModal) return;
+    document.getElementById('load-modal-step1').classList.remove('hidden');
+    document.getElementById('load-modal-step2').classList.add('hidden');
+    document.getElementById('load-modal-json').value = '';
+    loadConfigModal.classList.add('visible');
+}
+
+function closeLoadConfigModal() {
+    if (!loadConfigModal) return;
+    loadConfigModal.classList.remove('visible');
+    document.getElementById('load-modal-json').value = '';
+}
+
+async function loadModalPickFolder() {
+    try {
+        rootHandle = await window.showDirectoryPicker();
+        await saveRootHandle(rootHandle);
+        document.getElementById('file-status').innerText = '✓ ' + rootHandle.name;
+        await buildFolderSelector();
+        if (await tryAutoLoadBundledConfig()) {
+            document.getElementById('file-status').innerText = '✓ ' + rootHandle.name + '（' + BUNDLED_CONFIG_FILENAME + ' を読込）';
+            closeLoadConfigModal();
+            return;
+        }
+        document.getElementById('load-modal-step1').classList.add('hidden');
+        document.getElementById('load-modal-step2').classList.remove('hidden');
+    } catch (err) {
+        if (err.name !== 'AbortError') console.error(err);
+    }
+}
+
+async function loadConfigFromModalJson(input) {
+    if (!input.files[0]) return;
+    if (!rootHandle) {
+        alert('フォルダが選択されていません');
+        input.value = '';
+        return;
+    }
+    try {
+        const text = await input.files[0].text();
+        await applyConfigFromObject(JSON.parse(text));
+        document.getElementById('file-status').innerText = '✓ ' + rootHandle.name + '（設定を読込）';
+        closeLoadConfigModal();
     } catch (e) {
         alert('設定の読み込みに失敗しました: ' + (e.message || String(e)));
     }
@@ -1599,6 +1650,11 @@ function escapeAction() {
 }
 
 window.addEventListener('keydown', (e) => {
+    if (loadConfigModal && loadConfigModal.classList.contains('visible')) {
+        if (e.key === 'Escape') closeLoadConfigModal();
+        return;
+    }
+
     // Help overlay: always closeable
     if (helpOverlay.classList.contains('visible')) {
         if (e.key === 'Escape' || e.key.toLowerCase() === 'h' || e.key === '?') toggleHelp();

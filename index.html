@@ -20,7 +20,7 @@
     <div class="nav-right" id="nav-actions">
         <button class="mode-btn folder-btn" onclick="requestDirectoryAccess()">📁 フォルダ接続</button>
         <button class="mode-btn save-btn" onclick="saveConfig()">💾 保存</button>
-        <label class="mode-btn load-btn">📂 読込<input type="file" accept=".json" onchange="loadConfig(this)"></label>
+        <button class="mode-btn load-btn" type="button" onclick="openLoadConfigModal()">📂 読込</button>
         <button class="mode-btn" onclick="toggleHelp()" title="ショートカット一覧">❓</button>
     </div>
 </nav>
@@ -236,6 +236,29 @@
             </div>
             <div class="show-controls" id="show-controls" style="display:none;">
                 <button class="btn-play btn-show-advance" id="btn-show-advance" onclick="advanceShow()">START</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 読込フロー: フォルダ選択 → バンドル自動読込 or JSON 選択 -->
+<div id="load-config-modal" class="load-config-modal" onclick="if (event.target === this) closeLoadConfigModal()">
+    <div class="load-modal-box" onclick="event.stopPropagation()">
+        <h2 class="load-modal-title">📂 読込</h2>
+        <div id="load-modal-step1">
+            <p class="load-modal-text">イベント用のフォルダを選んでください。</p>
+            <p class="load-modal-hint">保存時にフォルダへ書き出した <strong>silhouette-quiz-config.json</strong> と <strong>_sounds/</strong> を含むフォルダを指定すると、設定・画像・音をまとめて読み込みます。</p>
+            <div class="load-modal-actions">
+                <button type="button" class="mode-btn" onclick="loadModalPickFolder()">選択</button>
+                <button type="button" class="small-btn" onclick="closeLoadConfigModal()">閉じる</button>
+            </div>
+        </div>
+        <div id="load-modal-step2" class="hidden">
+            <p class="load-modal-text">このフォルダに <strong>silhouette-quiz-config.json</strong> がありません。別名の JSON を選んでください。</p>
+            <div class="load-modal-actions">
+                <button type="button" class="mode-btn" onclick="document.getElementById('load-modal-json').click()">JSON を選択</button>
+                <input type="file" id="load-modal-json" accept=".json" class="hidden" onchange="loadConfigFromModalJson(this)">
+                <button type="button" class="small-btn" onclick="closeLoadConfigModal()">閉じる</button>
             </div>
         </div>
     </div>
