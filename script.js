@@ -54,6 +54,9 @@ const customSounds = {
 
 let previewAudio = null;
 
+/** `playCustomOrDefault` が clone した HTMLAudio（本体を触らず再生するため）。フェーズ切替で停止しないとバックグラウンドで鳴り続ける */
+const activeCustomClonedAudio = new Set();
+
 /** オープニング用デコード済みバッファ（同一ファイルの再デコードを避ける） */
 let openingDecodedBuffer = null;
 let openingDecodeGeneration = 0;
@@ -103,11 +106,28 @@ function playTone(freq, duration, type = 'sine', gainVal = 0.15) {
     osc.stop(audioCtx.currentTime + duration);
 }
 
+function stopAllClonedCustomSounds() {
+    for (const a of activeCustomClonedAudio) {
+        try {
+            a.pause();
+            a.currentTime = 0;
+        } catch (e) { /* ignore */ }
+    }
+    activeCustomClonedAudio.clear();
+}
+
 function playCustomOrDefault(slot, defaultFn) {
     if (customSounds[slot].audio) {
         const a = customSounds[slot].audio.cloneNode();
+        a.loop = false;
         a.volume = getVolume(slot);
-        a.play().catch(() => {});
+        activeCustomClonedAudio.add(a);
+        const detach = () => { activeCustomClonedAudio.delete(a); };
+        a.addEventListener('ended', detach, { once: true });
+        a.addEventListener('error', detach, { once: true });
+        a.play().catch(() => {
+            detach();
+        });
     } else {
         defaultFn();
     }
@@ -491,6 +511,7 @@ function stopAllPreviews() {
         previewAudio.currentTime = 0;
         previewAudio = null;
     }
+    stopAllClonedCustomSounds();
     stopOpeningLoop();
     for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending']) {
         const btn = document.getElementById('sound-test-' + slot);
@@ -806,11 +827,13 @@ function switchMode(mode) {
     document.getElementById('nav-play').classList.toggle('active', mode === 'play');
     document.body.classList.toggle('is-playing', mode === 'play');
     if (mode === 'play') {
+        stopAllClonedCustomSounds();
         currentSetIdx = 0;
         currentQIdx = 0;
         startBGM();
         enterShowPhase('opening');
     } else {
+        stopAllClonedCustomSounds();
         stopBGM();
         stopOpeningLoop();
         hideShowOverlay();
@@ -820,6 +843,7 @@ function switchMode(mode) {
 // --- Show Flow ---
 function enterShowPhase(phase) {
     stopOpeningLoop();
+    stopAllClonedCustomSounds();
     showPhase = phase;
     resetAnimState();
     loadQuizId++;
