@@ -6,7 +6,7 @@
     "0.5"
   ],
   "countdown": {
-    "enabled": true,
+    "enabled": false,
     "seconds": "1"
   },
   "showTitle": {
@@ -95,11 +95,11 @@
       "volume": 0.5
     },
     "category": {
-      "file": "_sounds/category.mp3",
+      "file": "_sounds/category.wav",
       "volume": 0.5
     },
     "qIntro": {
-      "file": null,
+      "file": "_sounds/qIntro.wav",
       "volume": 0.5
     },
     "qAfter": {
@@ -117,9 +117,27 @@
   },
   "setlist": [
     {
+      "folder": "アニメ",
+      "displayName": "アニメ",
+      "color": "#00e5ff",
+      "mode": "slide",
+      "questions": [
+        {
+          "name": "4.png",
+          "fullPath": "アニメ/4.png",
+          "isColor": false
+        },
+        {
+          "name": "4のコピー.png",
+          "fullPath": "アニメ/4のコピー.png",
+          "isColor": false
+        }
+      ]
+    },
+    {
       "folder": "ロゴ",
       "displayName": "ロゴ",
-      "color": "#ff2d8a",
+      "color": "#ffe42d",
       "mode": "slide",
       "questions": [
         {
@@ -132,7 +150,7 @@
     {
       "folder": "乗り物",
       "displayName": "乗り物",
-      "color": "#00e5ff",
+      "color": "#8aff2d",
       "mode": "slide",
       "questions": [
         {
@@ -156,24 +174,17 @@
       ]
     },
     {
-      "folder": "アニメ",
-      "displayName": "アニメ",
-      "color": "#a78bfa",
+      "folder": "スポーツ",
+      "displayName": "スポーツ",
+      "color": "#ff2d8a",
       "mode": "slide",
       "questions": [
         {
-          "name": "4.png",
-          "fullPath": "アニメ/4.png",
+          "name": "“Gemini_Generated_Image_kelvbhkelvbhkelv”の背景が削除されました.png",
+          "fullPath": "スポーツ/“Gemini_Generated_Image_kelvbhkelvbhkelv”の背景が削除されました.png",
           "isColor": false
         }
       ]
-    },
-    {
-      "folder": "スポーツ",
-      "displayName": "スポーツ",
-      "color": "#ff8a2d",
-      "mode": "slide",
-      "questions": []
     }
   ]
 }
