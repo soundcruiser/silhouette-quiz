@@ -52,8 +52,34 @@ const customSounds = {
 };
 
 let previewAudio = null;
-/** オープニング画面表示中のみループ再生する HTMLAudioElement（カスタム音源用） */
-let openingLoopAudio = null;
+
+/** オープニング用デコード済みバッファ（同一ファイルの再デコードを避ける） */
+let openingDecodedBuffer = null;
+let openingDecodeGeneration = 0;
+
+/**
+ * オープニング画面のカスタム音ループ（Web Audio + 継ぎ目クロスフェード）
+ * @type {{
+ *   mode: 'crossfade' | 'simple',
+ *   masterGain: GainNode,
+ *   segments: Array<{ src: AudioBufferSourceNode, g: GainNode }>,
+ *   refillId: ReturnType<typeof setInterval> | null,
+ *   buffer: AudioBuffer,
+ *   dur: number,
+ *   xfade: number,
+ *   period: number,
+ *   tAnchor: number,
+ *   lastScheduledIdx: number,
+ *   simpleSrc?: AudioBufferSourceNode
+ * } | null}
+ */
+let openingLoopState = null;
+
+/** decode 失敗時のみ使う HTMLAudio ループ（最後の手段） */
+let openingHtmlLoopFallback = null;
+
+const OPENING_LOOP_REFILL_HORIZON_SEC = 14;
+const OPENING_LOOP_REFILL_MS = 320;
 
 function getVolume(slot) { return customSounds[slot].volume; }
 
@@ -106,11 +132,47 @@ function playCountdownTick(remaining) {
     });
 }
 
+function invalidateOpeningDecodedBuffer() {
+    openingDecodeGeneration++;
+    openingDecodedBuffer = null;
+}
+
+async function decodeOpeningBufferForLoop() {
+    const el = customSounds.opening.audio;
+    if (!el?.src) return null;
+    if (openingDecodedBuffer) return openingDecodedBuffer;
+    const myGen = openingDecodeGeneration;
+    try {
+        const ab = await fetch(el.src).then(r => r.arrayBuffer());
+        const buf = await audioCtx.decodeAudioData(ab.slice(0));
+        if (myGen !== openingDecodeGeneration) return null;
+        openingDecodedBuffer = buf;
+        return buf;
+    } catch (e) {
+        return null;
+    }
+}
+
 function stopOpeningLoop() {
-    if (openingLoopAudio) {
-        openingLoopAudio.pause();
-        openingLoopAudio.currentTime = 0;
-        openingLoopAudio = null;
+    if (openingHtmlLoopFallback) {
+        openingHtmlLoopFallback.pause();
+        openingHtmlLoopFallback.currentTime = 0;
+        openingHtmlLoopFallback = null;
+    }
+    if (openingLoopState) {
+        if (openingLoopState.refillId != null) {
+            clearInterval(openingLoopState.refillId);
+        }
+        if (openingLoopState.mode === 'simple' && openingLoopState.simpleSrc) {
+            try { openingLoopState.simpleSrc.stop(0); } catch (e) {}
+            try { openingLoopState.simpleSrc.disconnect(); } catch (e) {}
+        }
+        for (const seg of openingLoopState.segments) {
+            try { seg.src.stop(0); } catch (e) {}
+            try { seg.src.disconnect(); seg.g.disconnect(); } catch (e) {}
+        }
+        try { openingLoopState.masterGain.disconnect(); } catch (e) {}
+        openingLoopState = null;
     }
 }
 
@@ -122,18 +184,143 @@ function playOpeningDefaultJingle() {
     setTimeout(() => playTone(784, 0.16, 'sine', v * 0.22), 360);
 }
 
-/** オープニング画面用: カスタム音源はループ、未設定時はワンショットのデフォルトジングル */
+function scheduleOpeningCrossfadeSegment(state, idx) {
+    const { buffer, dur, xfade, period, tAnchor, masterGain } = state;
+    const t = tAnchor + idx * period;
+
+    const src = audioCtx.createBufferSource();
+    const g = audioCtx.createGain();
+    src.buffer = buffer;
+    src.connect(g);
+    g.connect(masterGain);
+
+    if (idx === 0) {
+        g.gain.setValueAtTime(1, t);
+        g.gain.setValueAtTime(1, t + dur - xfade);
+        g.gain.linearRampToValueAtTime(0, t + dur);
+    } else {
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(1, t + xfade);
+        g.gain.setValueAtTime(1, t + dur - xfade);
+        g.gain.linearRampToValueAtTime(0, t + dur);
+    }
+
+    src.start(t, 0, dur);
+    const seg = { src, g };
+    state.segments.push(seg);
+    src.onended = () => {
+        try { src.disconnect(); g.disconnect(); } catch (e) {}
+        const i = state.segments.indexOf(seg);
+        if (i >= 0) state.segments.splice(i, 1);
+    };
+}
+
+function openingLoopRefillTick() {
+    const state = openingLoopState;
+    if (!state || state.mode !== 'crossfade' || showPhase !== 'opening') return;
+
+    const { tAnchor, period, dur } = state;
+    const horizon = audioCtx.currentTime + OPENING_LOOP_REFILL_HORIZON_SEC;
+    const now = audioCtx.currentTime;
+    while (tAnchor + (state.lastScheduledIdx + 1) * period < horizon) {
+        const nextIdx = state.lastScheduledIdx + 1;
+        const t = tAnchor + nextIdx * period;
+        if (t + dur <= now + 0.01) {
+            state.lastScheduledIdx = nextIdx;
+            continue;
+        }
+        state.lastScheduledIdx = nextIdx;
+        scheduleOpeningCrossfadeSegment(state, state.lastScheduledIdx);
+    }
+}
+
+function startOpeningSimpleBufferLoop(buffer) {
+    const masterGain = audioCtx.createGain();
+    masterGain.gain.value = getVolume('opening');
+    masterGain.connect(audioCtx.destination);
+
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    const dur = buffer.duration;
+    if (dur > 0.08) {
+        const trim = Math.min(0.025, dur * 0.03);
+        if (dur > trim * 2 + 0.02) {
+            src.loopStart = trim;
+            src.loopEnd = dur - trim;
+        }
+    }
+    src.connect(masterGain);
+    src.start(0);
+
+    openingLoopState = {
+        mode: 'simple',
+        masterGain,
+        segments: [],
+        refillId: null,
+        buffer,
+        dur,
+        xfade: 0,
+        period: dur,
+        tAnchor: 0,
+        lastScheduledIdx: 0,
+        simpleSrc: src
+    };
+}
+
+function startOpeningCrossfadeBufferLoop(buffer) {
+    const dur = buffer.duration;
+    const xfade = Math.min(0.12, Math.max(0.015, dur * 0.12));
+    const period = dur - xfade;
+    if (period < 0.04) {
+        startOpeningSimpleBufferLoop(buffer);
+        return;
+    }
+
+    const masterGain = audioCtx.createGain();
+    masterGain.gain.value = getVolume('opening');
+    masterGain.connect(audioCtx.destination);
+
+    const tAnchor = audioCtx.currentTime + 0.05;
+    openingLoopState = {
+        mode: 'crossfade',
+        masterGain,
+        segments: [],
+        refillId: null,
+        buffer,
+        dur,
+        xfade,
+        period,
+        tAnchor,
+        lastScheduledIdx: -1
+    };
+
+    openingLoopRefillTick();
+    openingLoopState.refillId = setInterval(openingLoopRefillTick, OPENING_LOOP_REFILL_MS);
+}
+
+/** オープニング画面用: カスタム音源は滑らかループ、未設定時はワンショットのデフォルトジングル */
 function startOpeningScreenAudio() {
     stopOpeningLoop();
-    if (customSounds.opening.audio) {
-        const a = customSounds.opening.audio.cloneNode();
-        a.volume = getVolume('opening');
-        a.loop = true;
-        a.play().catch(() => {});
-        openingLoopAudio = a;
-    } else {
+    if (!customSounds.opening.audio) {
         playOpeningDefaultJingle();
+        return;
     }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    decodeOpeningBufferForLoop().then((buffer) => {
+        if (showPhase !== 'opening') return;
+        if (buffer) {
+            startOpeningCrossfadeBufferLoop(buffer);
+            return;
+        }
+        if (customSounds.opening.audio) {
+            openingHtmlLoopFallback = customSounds.opening.audio.cloneNode();
+            openingHtmlLoopFallback.volume = getVolume('opening');
+            openingHtmlLoopFallback.loop = true;
+            openingHtmlLoopFallback.play().catch(() => {});
+        }
+    });
 }
 
 /** テスト再生など: カスタムは1回だけ、未設定はデフォルトジングル */
@@ -195,6 +382,9 @@ function stopBGM() {
 function loadCustomSound(slot, input) {
     const file = input.files[0];
     if (!file) return;
+    if (slot === 'opening') {
+        invalidateOpeningDecodedBuffer();
+    }
     const url = URL.createObjectURL(file);
     const audio = new Audio(url);
     audio.preload = 'auto';
@@ -214,6 +404,9 @@ function loadCustomSound(slot, input) {
 }
 
 function clearCustomSound(slot) {
+    if (slot === 'opening') {
+        invalidateOpeningDecodedBuffer();
+    }
     if (customSounds[slot].audio) {
         customSounds[slot].audio.pause();
         URL.revokeObjectURL(customSounds[slot].audio.src);
@@ -230,6 +423,14 @@ function updateVolume(slot, val) {
     document.getElementById('sound-vol-label-' + slot).textContent = val;
     if (customSounds[slot].audio) {
         customSounds[slot].audio.volume = customSounds[slot].volume;
+    }
+    if (slot === 'opening') {
+        if (openingLoopState?.masterGain) {
+            openingLoopState.masterGain.gain.value = customSounds[slot].volume;
+        }
+        if (openingHtmlLoopFallback) {
+            openingHtmlLoopFallback.volume = customSounds[slot].volume;
+        }
     }
 }
 
