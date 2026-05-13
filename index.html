@@ -54,13 +54,15 @@
         <div id="file-status">フォルダ未接続</div>
     </div>
 
-    <!-- Sound Settings -->
+    <!-- Sound Settings (折りたたみ) -->
     <div class="sound-section">
-        <div class="sound-section-header">
-            <h3 class="setlist-title">🔊 サウンド設定</h3>
-            <button class="small-btn sound-stop-all-btn" id="sound-stop-all" onclick="stopAllPreviews()">■ 停止</button>
-        </div>
-        <div class="sound-slots">
+        <div class="sound-section-collapsible-head">
+            <details class="sound-details">
+                <summary class="sound-summary">
+                    <h3 class="setlist-title">🔊 サウンド設定</h3>
+                    <span class="sound-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="sound-slots">
             <div class="sound-slot" data-slot="bgm">
                 <span class="sound-label">🎵 BGM</span>
                 <span class="sound-file-name" id="sound-name-bgm">未設定</span>
@@ -160,6 +162,9 @@
                 <button class="small-btn sound-test-btn" id="sound-test-ending" onclick="testSound('ending')">▶</button>
                 <button class="small-btn sound-clear-btn" onclick="clearCustomSound('ending')">✕</button>
             </div>
+                </div>
+            </details>
+            <button type="button" class="small-btn sound-stop-all-btn sound-stop-all-outer" id="sound-stop-all" onclick="stopAllPreviews()">■ 停止</button>
         </div>
     </div>
 
