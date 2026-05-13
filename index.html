@@ -131,6 +131,15 @@
                 <button class="small-btn sound-test-btn" id="sound-test-qIntro" onclick="testSound('qIntro')">▶</button>
                 <button class="small-btn sound-clear-btn" onclick="clearCustomSound('qIntro')">✕</button>
             </div>
+            <div class="sound-slot" data-slot="qAfter">
+                <span class="sound-label">🖼 Q後（画像）</span>
+                <span class="sound-file-name" id="sound-name-qAfter">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-qAfter" min="0" max="100" value="50" oninput="updateVolume('qAfter', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-qAfter">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('qAfter', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-qAfter" onclick="testSound('qAfter')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('qAfter')">✕</button>
+            </div>
         </div>
     </div>
 

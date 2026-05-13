@@ -45,7 +45,8 @@ const customSounds = {
     reveal:    { audio: null, fileName: null, volume: 0.5 },
     countdown: { audio: null, fileName: null, volume: 0.5 },
     category:  { audio: null, fileName: null, volume: 0.5 },
-    qIntro:    { audio: null, fileName: null, volume: 0.5 }
+    qIntro:    { audio: null, fileName: null, volume: 0.5 },
+    qAfter:    { audio: null, fileName: null, volume: 0.5 }
 };
 
 let previewAudio = null;
@@ -115,6 +116,14 @@ function playQIntroSound() {
         playTone(784, 0.07, 'sine', v * 0.28);
         setTimeout(() => playTone(988, 0.07, 'sine', v * 0.32), 70);
         setTimeout(() => playTone(1175, 0.14, 'sine', v * 0.26), 140);
+    });
+}
+
+function playQAfterSound() {
+    const v = getVolume('qAfter');
+    playCustomOrDefault('qAfter', () => {
+        playTone(659, 0.12, 'triangle', v * 0.24);
+        setTimeout(() => playTone(880, 0.11, 'sine', v * 0.22), 90);
     });
 }
 
@@ -200,6 +209,8 @@ function testSound(slot) {
         playCategorySound();
     } else if (slot === 'qIntro') {
         playQIntroSound();
+    } else if (slot === 'qAfter') {
+        playQAfterSound();
     }
 
     if (customSounds[slot].audio && slot !== 'bgm') {
@@ -219,7 +230,7 @@ function stopAllPreviews() {
         previewAudio.currentTime = 0;
         previewAudio = null;
     }
-    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'category', 'qIntro']) {
+    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'category', 'qIntro', 'qAfter']) {
         const btn = document.getElementById('sound-test-' + slot);
         if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; }
     }
@@ -742,6 +753,8 @@ async function loadQuiz() {
 
     quizImg.style.visibility = 'visible';
     quizLoading = false;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    playQAfterSound();
     hideShowOverlay();
     sendRemoteState();
 }
@@ -988,7 +1001,7 @@ function prevQuiz() {
 function saveConfig() {
     if (setlist.length === 0) return;
     const config = {
-        version: 6,
+        version: 7,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -1010,7 +1023,8 @@ function saveConfig() {
             reveal:    { file: customSounds.reveal.fileName,    volume: customSounds.reveal.volume },
             countdown: { file: customSounds.countdown.fileName, volume: customSounds.countdown.volume },
             category:  { file: customSounds.category.fileName,  volume: customSounds.category.volume },
-            qIntro:    { file: customSounds.qIntro.fileName,    volume: customSounds.qIntro.volume }
+            qIntro:    { file: customSounds.qIntro.fileName,    volume: customSounds.qIntro.volume },
+            qAfter:    { file: customSounds.qAfter.fileName,    volume: customSounds.qAfter.volume }
         },
         setlist: setlist.map(cat => ({
             folder: cat.folder,
@@ -1055,7 +1069,7 @@ async function loadConfig(input) {
             config.sounds.start2 = config.sounds.start;
             config.sounds.start3 = config.sounds.start;
         }
-        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'category', 'qIntro']) {
+        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'category', 'qIntro', 'qAfter']) {
             const saved = config.sounds[slot];
             if (!saved) continue;
             const sObj = typeof saved === 'object' ? saved : { file: saved, volume: 0.5 };
