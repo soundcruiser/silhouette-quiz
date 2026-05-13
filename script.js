@@ -2205,6 +2205,30 @@ playBottom?.addEventListener('mouseleave', () => {
     }, 1500);
 });
 
+/** プレイ中コントロールはクリックではなくホバー（mouseenter）で実行 */
+function runPlayHoverAction(el) {
+    const action = el.dataset.playHover;
+    if (!action) return;
+    if (action === 'startAnim') {
+        const n = Number(el.dataset.playArg);
+        if (n >= 1 && n <= 3) startAnim(n);
+        return;
+    }
+    switch (action) {
+        case 'prevQuiz': prevQuiz(); break;
+        case 'nextQuiz': nextQuiz(); break;
+        case 'togglePause': togglePause(); break;
+        case 'replayAnim': replayAnim(); break;
+        case 'reveal': reveal(); break;
+        case 'advanceShow': advanceShow(); break;
+        default: break;
+    }
+}
+
+document.querySelectorAll('#play-mode [data-play-hover]').forEach((el) => {
+    el.addEventListener('mouseenter', () => runPlayHoverAction(el));
+});
+
 // --- 10. Auto-restore previous folder on load ---
 initFloatingShapesInputDelegation();
 applyThinkingShapesFromForm();
