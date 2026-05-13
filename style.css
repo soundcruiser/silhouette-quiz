@@ -752,6 +752,11 @@ body.is-playing.play-chrome-top nav {
     backdrop-filter: blur(12px);
 }
 
+body.is-playing.play-hide-cursor,
+body.is-playing.play-hide-cursor * {
+    cursor: none !important;
+}
+
 .stage {
     height: 100vh;
     display: flex;

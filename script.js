@@ -21,6 +21,8 @@ let topChromeTimer = null;
 /** 近接ゾーン出入り検知（中央でのmousemoveで隠しタイマーが延び続けないようにする） */
 let playChromeWasInTopZone = false;
 let playChromeWasInBottomZone = false;
+/** プレイ中・マウス停止後にカーソルを隠す */
+let playCursorIdleTimer = null;
 let loadQuizId = 0;
 let quizLoading = false;
 let lastAdvanceTime = 0;
@@ -1174,6 +1176,7 @@ function switchMode(mode) {
         playChromeWasInTopZone = false;
         playChromeWasInBottomZone = false;
         enterShowPhase('opening');
+        resetPlayCursorIdle();
     } else {
         hideThinkingOverlay();
         stopAllClonedCustomSounds();
@@ -1186,6 +1189,9 @@ function switchMode(mode) {
         clearTimeout(topChromeTimer);
         playChromeWasInTopZone = false;
         playChromeWasInBottomZone = false;
+        document.body.classList.remove('play-hide-cursor');
+        clearTimeout(playCursorIdleTimer);
+        playCursorIdleTimer = null;
     }
 }
 
@@ -2082,6 +2088,13 @@ async function loadConfigFromModalJson(input) {
 // --- 7. Help & UI Toggles ---
 function toggleHelp() {
     helpOverlay.classList.toggle('visible');
+    if (helpOverlay.classList.contains('visible')) {
+        document.body.classList.remove('play-hide-cursor');
+        clearTimeout(playCursorIdleTimer);
+        playCursorIdleTimer = null;
+    } else if (isPlayModeVisible()) {
+        resetPlayCursorIdle();
+    }
 }
 
 function toggleCountdownInput() {
@@ -2200,9 +2213,31 @@ window.addEventListener('keydown', (e) => {
 // --- 9. Play chrome: 上下端の「近接ゾーン」でのみナビ・操作バーを表示 ---
 const PLAY_CHROME_TOP_PX = 100;
 const PLAY_CHROME_BOTTOM_PX = 150;
+const PLAY_CURSOR_HIDE_AFTER_MS = 2200;
 
 function isPlayModeVisible() {
     return document.getElementById('play-mode').style.display !== 'none';
+}
+
+function resetPlayCursorIdle() {
+    if (!isPlayModeVisible()) {
+        document.body.classList.remove('play-hide-cursor');
+        clearTimeout(playCursorIdleTimer);
+        playCursorIdleTimer = null;
+        return;
+    }
+    if (helpOverlay.classList.contains('visible')) {
+        document.body.classList.remove('play-hide-cursor');
+        clearTimeout(playCursorIdleTimer);
+        playCursorIdleTimer = null;
+        return;
+    }
+    document.body.classList.remove('play-hide-cursor');
+    clearTimeout(playCursorIdleTimer);
+    playCursorIdleTimer = setTimeout(() => {
+        if (!isPlayModeVisible() || helpOverlay.classList.contains('visible')) return;
+        document.body.classList.add('play-hide-cursor');
+    }, PLAY_CURSOR_HIDE_AFTER_MS);
 }
 
 function armHidePlayBottom(delayMs) {
@@ -2229,6 +2264,10 @@ function extendTopChrome() {
     document.body.classList.add('play-chrome-top');
     armHideTopChrome(3000);
 }
+
+document.addEventListener('mousemove', () => {
+    resetPlayCursorIdle();
+}, { passive: true });
 
 document.querySelector('.stage')?.addEventListener('mousemove', (e) => {
     if (!isPlayModeVisible()) return;
