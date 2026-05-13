@@ -725,6 +725,11 @@ nav {
 }
 
 body.is-playing nav .nav-right { display: none; }
+
+/* 現在のモードへの切替だけ非表示（誤ってショーをリセットしない・ノイズ低減） */
+body.is-playing #nav-play { display: none; }
+body:not(.is-playing) #nav-config { display: none; }
+
 body.is-playing nav {
     padding: 8px 24px;
     border-bottom: none;
