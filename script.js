@@ -1537,6 +1537,7 @@ function reveal() {
     hideThinkingOverlay();
     playRevealSound();
     resetAnimState();
+    quizImg.onanimationend = null;
 
     quizImg.classList.remove('animating', 'is-silhouette', 'revealed-img');
     quizImg.style.animation = '';
