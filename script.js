@@ -396,8 +396,7 @@ function startBGM() {
     const a = customSounds.bgm.audio;
     a.loop = true;
     a.volume = getVolume('bgm');
-    a.currentTime = 0;
-    a.play().catch(() => {});
+    if (a.paused) a.play().catch(() => {});
 }
 
 function stopBGM() {
@@ -830,7 +829,6 @@ function switchMode(mode) {
         stopAllClonedCustomSounds();
         currentSetIdx = 0;
         currentQIdx = 0;
-        startBGM();
         enterShowPhase('opening');
     } else {
         stopAllClonedCustomSounds();
@@ -848,6 +846,12 @@ function enterShowPhase(phase) {
     resetAnimState();
     loadQuizId++;
     quizLoading = false;
+
+    if (phase === 'opening' || phase === 'ending') {
+        stopBGM();
+    } else if (phase === 'category') {
+        startBGM();
+    }
 
     if (phase === 'quiz') {
         quizControls.style.display = '';
