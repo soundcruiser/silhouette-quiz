@@ -296,6 +296,12 @@ function playTone(freq, duration, type = 'sine', gainVal = 0.15) {
     osc.stop(audioCtx.currentTime + duration);
 }
 
+/** 設定保存完了のフィードバック（保存ボタンのユーザ操作直後に鳴らす） */
+function playSaveSuccessTone() {
+    if (audioCtx.state === 'suspended') void audioCtx.resume();
+    playTone(880, 0.1, 'sine', 0.11);
+}
+
 function stopAllClonedCustomSounds() {
     for (const a of activeCustomClonedAudio) {
         try {
@@ -1906,6 +1912,7 @@ async function saveConfig() {
                 );
                 document.getElementById('file-status').innerText =
                     '✓ ' + rootHandle.name + '（' + BUNDLED_CONFIG_FILENAME + ' と ' + SOUND_PACK_DIR + '/ を保存）';
+                playSaveSuccessTone();
                 return;
             }
         } catch (e) {
@@ -1942,6 +1949,7 @@ async function saveConfig() {
         sounds,
         setlist: setlistPayload
     });
+    playSaveSuccessTone();
 }
 
 async function loadConfig(input) {
