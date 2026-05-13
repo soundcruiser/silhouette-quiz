@@ -216,7 +216,7 @@
 
 <script>
 const params = new URLSearchParams(location.search);
-const urlId = params.get('id');
+const urlId = (params.get('id') || '').trim();
 
 let hostId = null;
 let conn = null;

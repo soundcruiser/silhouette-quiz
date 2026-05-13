@@ -1587,32 +1587,46 @@ body.is-playing nav {
     border: 1px solid rgba(138, 255, 45, 0.12);
 }
 .remote-qr {
+    width: 100%;
+}
+.remote-qr svg { display: block; width: 160px; height: 160px; }
+.remote-connect-pair {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px 28px;
+    width: 100%;
+}
+.remote-id-block,
+.remote-qr-block {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
+    min-width: min(100%, 200px);
 }
-.remote-qr svg { display: block; width: 160px; height: 160px; }
-.remote-id-display {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-}
-.remote-id-label {
+.remote-id-caption {
     font-size: 11px;
     font-weight: 700;
     color: var(--text-muted);
-    letter-spacing: 1px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 .remote-id-value {
     font-family: monospace;
-    font-size: 22px;
+    font-size: clamp(17px, 2.8vw, 22px);
     font-weight: 800;
     color: var(--cyan);
-    letter-spacing: 3px;
+    letter-spacing: 0.12em;
     text-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
     user-select: all;
+    text-align: center;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    line-height: 1.3;
 }
 .remote-qr-inner {
     background: #fff;

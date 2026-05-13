@@ -1773,25 +1773,36 @@ function initRemote() {
         statusEl.textContent = '待機中';
         startBtn.textContent = 'リセット';
 
-        const isHttp = window.location.protocol.startsWith('http');
-        const base = isHttp
-            ? window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '')
-            : null;
-        const remoteUrl = base ? `${base}/remote.html?id=${peerId}` : null;
-
-        let html = `<div class="remote-id-display"><span class="remote-id-label">ID</span><span class="remote-id-value">${peerId}</span></div>`;
-        if (remoteUrl) {
-            const qr = qrcode(0, 'M');
-            qr.addData(remoteUrl);
-            qr.make();
-            html += `<div class="remote-qr-inner">${qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true })}</div>`;
+        const isHttp = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+        let remoteUrl = null;
+        if (isHttp) {
+            const u = new URL('remote.html', window.location.href);
+            u.searchParams.set('id', peerId);
+            remoteUrl = u.href;
         }
-        qrEl.innerHTML = html;
+        const qrPayload = remoteUrl || peerId;
+
+        const qr = qrcode(0, 'M');
+        qr.addData(qrPayload);
+        qr.make();
+        const qrSvg = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true });
+
+        qrEl.innerHTML = `
+            <div class="remote-connect-pair">
+                <div class="remote-id-block">
+                    <span class="remote-id-caption">接続ID（手入力）</span>
+                    <span class="remote-id-value">${peerId}</span>
+                </div>
+                <div class="remote-qr-block">
+                    <span class="remote-id-caption">${remoteUrl ? 'QRで接続' : 'QR（IDコピー用）'}</span>
+                    <div class="remote-qr-inner">${qrSvg}</div>
+                </div>
+            </div>`;
         qrEl.classList.remove('hidden');
 
         noteEl.innerHTML = remoteUrl
-            ? `スマホでQRスキャン、または <code>${peerId}</code> を手入力`
-            : `スマホで <a href="https://github.com" target="_blank" style="color:var(--cyan);">remote.html</a> を開き ID を入力`;
+            ? `QR を読み取ると <code>remote.html</code> が開き、<strong>そのまま接続</strong>します。読み取れない場合は ID を手入力`
+            : `スマホから接続するには、同一 LAN 上の <strong>http(s) の URL</strong> でホストを開いてください（<code>file://</code> では QR は ID 文字列のみ）。<code>remote.html</code> に上の ID を入力`;
         noteEl.classList.remove('hidden');
     });
 
