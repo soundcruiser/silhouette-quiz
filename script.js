@@ -1,23 +1,3 @@
-// --- アクセス制限 ---
-const SECRET_PASS = "ongy";
-
-if (sessionStorage.getItem("auth") !== "true") {
-    const input = prompt("【Silhouette Master Pro】\nアクセスコードを入力してください：");
-    if (input === SECRET_PASS) {
-        sessionStorage.setItem("auth", "true");
-    } else {
-        alert("コードが正しくありません。");
-        document.body.innerHTML = `
-            <div style="background:#0a0a14; color:#ff2d8a; height:100vh; display:flex; align-items:center; justify-content:center; font-family:'Urbanist',sans-serif;">
-                <div style="text-align:center; border:1.5px solid #ff2d8a; padding:48px; border-radius:16px;">
-                    <h1 style="font-size:28px; margin:0 0 12px;">ACCESS DENIED</h1>
-                    <p style="color:#9a9ab0; margin:0;">認証が必要です。ページを更新してやり直してください。</p>
-                </div>
-            </div>`;
-        throw new Error("Authentication failed");
-    }
-}
-
 // --- State ---
 let rootHandle = null;
 let setlist = []; // [{folder, displayName, color, mode:'slide'|'static', questions:[{name,fullPath,isColor,handle}]}]
@@ -63,7 +43,9 @@ const customSounds = {
     start2:    { audio: null, fileName: null, volume: 0.5 },
     start3:    { audio: null, fileName: null, volume: 0.5 },
     reveal:    { audio: null, fileName: null, volume: 0.5 },
-    countdown: { audio: null, fileName: null, volume: 0.5 }
+    countdown: { audio: null, fileName: null, volume: 0.5 },
+    category:  { audio: null, fileName: null, volume: 0.5 },
+    qIntro:    { audio: null, fileName: null, volume: 0.5 }
 };
 
 let previewAudio = null;
@@ -116,6 +98,23 @@ function playCountdownTick(remaining) {
     const v = getVolume('countdown');
     playCustomOrDefault('countdown', () => {
         playTone(cdTones[remaining % cdTones.length], 0.12, 'sine', v * 0.3);
+    });
+}
+
+function playCategorySound() {
+    const v = getVolume('category');
+    playCustomOrDefault('category', () => {
+        playTone(523, 0.1, 'triangle', v * 0.22);
+        setTimeout(() => playTone(659, 0.12, 'triangle', v * 0.26), 95);
+    });
+}
+
+function playQIntroSound() {
+    const v = getVolume('qIntro');
+    playCustomOrDefault('qIntro', () => {
+        playTone(784, 0.07, 'sine', v * 0.28);
+        setTimeout(() => playTone(988, 0.07, 'sine', v * 0.32), 70);
+        setTimeout(() => playTone(1175, 0.14, 'sine', v * 0.26), 140);
     });
 }
 
@@ -197,6 +196,10 @@ function testSound(slot) {
         playRevealSound();
     } else if (slot === 'countdown') {
         playCountdownTick(3);
+    } else if (slot === 'category') {
+        playCategorySound();
+    } else if (slot === 'qIntro') {
+        playQIntroSound();
     }
 
     if (customSounds[slot].audio && slot !== 'bgm') {
@@ -216,7 +219,7 @@ function stopAllPreviews() {
         previewAudio.currentTime = 0;
         previewAudio = null;
     }
-    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown']) {
+    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'category', 'qIntro']) {
         const btn = document.getElementById('sound-test-' + slot);
         if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; }
     }
@@ -647,6 +650,8 @@ function renderCategoryTitle() {
             <div class="show-cat-bar" style="background: ${cat.color}"></div>
         </div>
     `;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    playCategorySound();
 }
 
 function renderEnding() {
@@ -700,6 +705,8 @@ async function loadQuiz() {
     `;
     showOverlay.style.display = 'flex';
     showOverlay.className = 'show-overlay visible';
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    playQIntroSound();
 
     const item = questions[currentQIdx];
     quizImg.onanimationend = null;
@@ -981,7 +988,7 @@ function prevQuiz() {
 function saveConfig() {
     if (setlist.length === 0) return;
     const config = {
-        version: 5,
+        version: 6,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -1001,7 +1008,9 @@ function saveConfig() {
             start2:    { file: customSounds.start2.fileName,    volume: customSounds.start2.volume },
             start3:    { file: customSounds.start3.fileName,    volume: customSounds.start3.volume },
             reveal:    { file: customSounds.reveal.fileName,    volume: customSounds.reveal.volume },
-            countdown: { file: customSounds.countdown.fileName, volume: customSounds.countdown.volume }
+            countdown: { file: customSounds.countdown.fileName, volume: customSounds.countdown.volume },
+            category:  { file: customSounds.category.fileName,  volume: customSounds.category.volume },
+            qIntro:    { file: customSounds.qIntro.fileName,    volume: customSounds.qIntro.volume }
         },
         setlist: setlist.map(cat => ({
             folder: cat.folder,
@@ -1046,7 +1055,7 @@ async function loadConfig(input) {
             config.sounds.start2 = config.sounds.start;
             config.sounds.start3 = config.sounds.start;
         }
-        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown']) {
+        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'category', 'qIntro']) {
             const saved = config.sounds[slot];
             if (!saved) continue;
             const sObj = typeof saved === 'object' ? saved : { file: saved, volume: 0.5 };

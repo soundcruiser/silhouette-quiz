@@ -113,6 +113,24 @@
                 <button class="small-btn sound-test-btn" id="sound-test-countdown" onclick="testSound('countdown')">▶</button>
                 <button class="small-btn sound-clear-btn" onclick="clearCustomSound('countdown')">✕</button>
             </div>
+            <div class="sound-slot" data-slot="category">
+                <span class="sound-label">📂 カテゴリ</span>
+                <span class="sound-file-name" id="sound-name-category">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-category" min="0" max="100" value="50" oninput="updateVolume('category', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-category">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('category', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-category" onclick="testSound('category')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('category')">✕</button>
+            </div>
+            <div class="sound-slot" data-slot="qIntro">
+                <span class="sound-label">❓ Q表示</span>
+                <span class="sound-file-name" id="sound-name-qIntro">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-qIntro" min="0" max="100" value="50" oninput="updateVolume('qIntro', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-qIntro">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('qIntro', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-qIntro" onclick="testSound('qIntro')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('qIntro')">✕</button>
+            </div>
         </div>
     </div>
 
