@@ -793,14 +793,6 @@ function runCountdown(seconds, callback, speedNum) {
     const cdColors = ['#00e5ff', '#ffe42d', '#ff2d8a', '#8aff2d', '#ff8a2d'];
 
     function tick() {
-        const color = cdColors[remaining % cdColors.length];
-        numEl.textContent = remaining;
-        numEl.style.color = color;
-        numEl.classList.remove('pop');
-        void numEl.offsetWidth;
-        numEl.classList.add('pop');
-        playCountdownTick(remaining);
-
         if (remaining <= 0) {
             overlay.classList.remove('visible');
             animState.countingDown = false;
@@ -808,6 +800,13 @@ function runCountdown(seconds, callback, speedNum) {
             callback();
             return;
         }
+        const color = cdColors[remaining % cdColors.length];
+        numEl.textContent = remaining;
+        numEl.style.color = color;
+        numEl.classList.remove('pop');
+        void numEl.offsetWidth;
+        numEl.classList.add('pop');
+        playCountdownTick(remaining);
         remaining--;
         setTimeout(tick, 1000);
     }
