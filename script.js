@@ -11,6 +11,8 @@ let thinkingOverlayVisible = false;
 let thinkingLoopAudioEl = null;
 let thinkingLoopIntervalId = null;
 let thinkingLoopPreviewTimer = null;
+/** BGM 線形フェードの打ち消し用（新しいフェードや即時同期で世代を進める） */
+let bgmThinkingFadeGen = 0;
 let showPhase = 'opening'; // 'opening' | 'category' | 'quiz' | 'ending'
 
 let controlsTimer = null;
@@ -97,7 +99,65 @@ const BUNDLED_CONFIG_FILENAME = 'silhouette-quiz-config.json';
 const SOUND_PACK_DIR = '_sounds';
 const SOUND_CONFIG_SLOTS = ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending', 'thinkingLoop'];
 
+/** 考え中ループ SE 鳴っている間の BGM 音量（スライダー値に対する倍率） */
+const THINKING_BGM_DUCK_MULT = 0.4;
+const THINKING_BGM_DUCK_OUT_MS = 380;
+const THINKING_BGM_DUCK_IN_MS = 520;
+
 function getVolume(slot) { return customSounds[slot].volume; }
+
+function isThinkingLoopSeActiveForBgmDuck() {
+    return thinkingLoopAudioEl !== null || thinkingLoopIntervalId !== null;
+}
+
+function cancelBgmThinkingFade() {
+    bgmThinkingFadeGen++;
+}
+
+function rampBgmVolume(toLinear, durationMs) {
+    const a = customSounds.bgm.audio;
+    if (!a) return;
+    if (durationMs <= 0) {
+        a.volume = Math.max(0, Math.min(1, toLinear));
+        return;
+    }
+    const myGen = ++bgmThinkingFadeGen;
+    const from = a.volume;
+    const t0 = performance.now();
+    const tick = (now) => {
+        if (myGen !== bgmThinkingFadeGen) return;
+        const u = Math.min(1, (now - t0) / durationMs);
+        const v = from + (toLinear - from) * u;
+        a.volume = Math.max(0, Math.min(1, v));
+        if (u < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+}
+
+/** スライダー値と考え中ダック状態に応じた BGM の線形音量 */
+function getTargetBgmVolumeLinear() {
+    const base = getVolume('bgm');
+    if (isThinkingLoopSeActiveForBgmDuck()) return base * THINKING_BGM_DUCK_MULT;
+    return base;
+}
+
+function syncBgmElementVolumeImmediate() {
+    const a = customSounds.bgm.audio;
+    if (!a) return;
+    cancelBgmThinkingFade();
+    a.volume = getTargetBgmVolumeLinear();
+}
+
+function duckBgmForThinkingLoop() {
+    if (!customSounds.bgm.audio) return;
+    const target = getVolume('bgm') * THINKING_BGM_DUCK_MULT;
+    rampBgmVolume(target, THINKING_BGM_DUCK_OUT_MS);
+}
+
+function restoreBgmAfterThinkingLoop() {
+    if (!customSounds.bgm.audio) return;
+    rampBgmVolume(getVolume('bgm'), THINKING_BGM_DUCK_IN_MS);
+}
 
 function playTone(freq, duration, type = 'sine', gainVal = 0.15) {
     const osc = audioCtx.createOscillator();
@@ -165,7 +225,8 @@ function playCountdownTick(remaining) {
     });
 }
 
-function stopThinkingLoopSound() {
+function stopThinkingLoopSound(opts = {}) {
+    const { skipBgmRestore = false } = opts;
     if (thinkingLoopIntervalId != null) {
         clearInterval(thinkingLoopIntervalId);
         thinkingLoopIntervalId = null;
@@ -177,19 +238,30 @@ function stopThinkingLoopSound() {
         } catch (e) { /* ignore */ }
         thinkingLoopAudioEl = null;
     }
+    if (!skipBgmRestore) {
+        restoreBgmAfterThinkingLoop();
+    }
 }
 
 /** 考え中オーバーレイ表示中のループ SE（設定のオン時のみ） */
 function startThinkingLoopSound() {
-    stopThinkingLoopSound();
+    stopThinkingLoopSound({ skipBgmRestore: true });
     const toggle = document.getElementById('thinking-se-enabled');
-    if (!toggle || !toggle.checked) return;
+    if (!toggle || !toggle.checked) {
+        restoreBgmAfterThinkingLoop();
+        return;
+    }
     if (customSounds.thinkingLoop.audio) {
         const a = customSounds.thinkingLoop.audio.cloneNode();
         a.loop = true;
         a.volume = getVolume('thinkingLoop');
         thinkingLoopAudioEl = a;
-        a.play().catch(() => { thinkingLoopAudioEl = null; });
+        a.play()
+            .then(() => { duckBgmForThinkingLoop(); })
+            .catch(() => {
+                thinkingLoopAudioEl = null;
+                restoreBgmAfterThinkingLoop();
+            });
     } else {
         const v = getVolume('thinkingLoop');
         const tick = () => {
@@ -198,6 +270,7 @@ function startThinkingLoopSound() {
         };
         tick();
         thinkingLoopIntervalId = setInterval(tick, 2100);
+        duckBgmForThinkingLoop();
     }
 }
 
@@ -437,12 +510,18 @@ function startBGM() {
     if (!customSounds.bgm.audio) return;
     const a = customSounds.bgm.audio;
     a.loop = true;
-    a.volume = getVolume('bgm');
+    if (isThinkingLoopSeActiveForBgmDuck()) {
+        rampBgmVolume(getVolume('bgm') * THINKING_BGM_DUCK_MULT, Math.min(THINKING_BGM_DUCK_OUT_MS, 200));
+    } else {
+        cancelBgmThinkingFade();
+        a.volume = getVolume('bgm');
+    }
     if (a.paused) a.play().catch(() => {});
 }
 
 function stopBGM() {
     if (!customSounds.bgm.audio) return;
+    cancelBgmThinkingFade();
     customSounds.bgm.audio.pause();
     customSounds.bgm.audio.currentTime = 0;
 }
@@ -463,7 +542,8 @@ function loadCustomSound(slot, input) {
     }
     customSounds[slot].audio = audio;
     customSounds[slot].fileName = file.name;
-    audio.volume = getVolume(slot);
+    if (slot === 'bgm') syncBgmElementVolumeImmediate();
+    else audio.volume = getVolume(slot);
 
     const nameEl = document.getElementById('sound-name-' + slot);
     nameEl.textContent = file.name;
@@ -476,6 +556,7 @@ function clearCustomSound(slot) {
         invalidateOpeningDecodedBuffer();
     }
     if (customSounds[slot].audio) {
+        if (slot === 'bgm') cancelBgmThinkingFade();
         customSounds[slot].audio.pause();
         URL.revokeObjectURL(customSounds[slot].audio.src);
         customSounds[slot].audio = null;
@@ -490,7 +571,8 @@ function updateVolume(slot, val) {
     customSounds[slot].volume = parseInt(val) / 100;
     document.getElementById('sound-vol-label-' + slot).textContent = val;
     if (customSounds[slot].audio) {
-        customSounds[slot].audio.volume = customSounds[slot].volume;
+        if (slot === 'bgm') syncBgmElementVolumeImmediate();
+        else customSounds[slot].audio.volume = customSounds[slot].volume;
     }
     if (slot === 'opening') {
         if (openingLoopState?.masterGain) {
@@ -596,6 +678,7 @@ function stopAllPreviews() {
         if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; }
     }
     if (customSounds.bgm.audio) {
+        cancelBgmThinkingFade();
         customSounds.bgm.audio.pause();
         customSounds.bgm.audio.currentTime = 0;
     }
@@ -1476,7 +1559,8 @@ async function bindSoundSlotFromFileHandle(slot, fileHandle) {
     }
     customSounds[slot].audio = audio;
     customSounds[slot].fileName = file.name;
-    audio.volume = getVolume(slot);
+    if (slot === 'bgm') syncBgmElementVolumeImmediate();
+    else audio.volume = getVolume(slot);
     const nameEl = document.getElementById('sound-name-' + slot);
     nameEl.textContent = file.name;
     nameEl.classList.add('has-file');
