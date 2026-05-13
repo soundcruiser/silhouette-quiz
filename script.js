@@ -81,6 +81,12 @@ let openingHtmlLoopFallback = null;
 const OPENING_LOOP_REFILL_HORIZON_SEC = 14;
 const OPENING_LOOP_REFILL_MS = 320;
 
+/** 接続フォルダ直下の一括設定（フォルダ接続時に自動読込） */
+const BUNDLED_CONFIG_FILENAME = 'silhouette-quiz-config.json';
+/** 保存時にサウンドを書き出すサブフォルダ（_ 始まりのためカテゴリ追加セレクトには出ない） */
+const SOUND_PACK_DIR = '_sounds';
+const SOUND_CONFIG_SLOTS = ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending'];
+
 function getVolume(slot) { return customSounds[slot].volume; }
 
 function playTone(freq, duration, type = 'sine', gainVal = 0.15) {
@@ -545,6 +551,9 @@ async function restoreRootHandle() {
         rootHandle = handle;
         document.getElementById('file-status').innerText = "✓ " + rootHandle.name;
         await buildFolderSelector();
+        if (await tryAutoLoadBundledConfig()) {
+            document.getElementById('file-status').innerText = "✓ " + rootHandle.name + "（" + BUNDLED_CONFIG_FILENAME + " を読込）";
+        }
         return true;
     } catch { return false; }
 }
@@ -555,6 +564,9 @@ async function requestDirectoryAccess() {
         document.getElementById('file-status').innerText = "✓ " + rootHandle.name;
         await saveRootHandle(rootHandle);
         await buildFolderSelector();
+        if (await tryAutoLoadBundledConfig()) {
+            document.getElementById('file-status').innerText = "✓ " + rootHandle.name + "（" + BUNDLED_CONFIG_FILENAME + " を読込）";
+        }
     } catch (err) {
         if (err.name !== 'AbortError') console.error("Access denied", err);
     }
@@ -1257,45 +1269,8 @@ function prevQuiz() {
     loadQuiz();
 }
 
-// --- 6. Config Save/Load (Setlist version) ---
-function saveConfig() {
-    if (setlist.length === 0) return;
-    const config = {
-        version: 9,
-        speeds: [
-            document.getElementById('speed1').value,
-            document.getElementById('speed2').value,
-            document.getElementById('speed3').value
-        ],
-        countdown: {
-            enabled: document.getElementById('countdown-toggle').checked,
-            seconds: document.getElementById('countdown-sec').value
-        },
-        showTitle: {
-            main: document.getElementById('show-title').value,
-            sub: document.getElementById('show-subtitle').value
-        },
-        sounds: {
-            bgm:       { file: customSounds.bgm.fileName,       volume: customSounds.bgm.volume },
-            start1:    { file: customSounds.start1.fileName,    volume: customSounds.start1.volume },
-            start2:    { file: customSounds.start2.fileName,    volume: customSounds.start2.volume },
-            start3:    { file: customSounds.start3.fileName,    volume: customSounds.start3.volume },
-            reveal:    { file: customSounds.reveal.fileName,    volume: customSounds.reveal.volume },
-            countdown: { file: customSounds.countdown.fileName, volume: customSounds.countdown.volume },
-            opening:   { file: customSounds.opening.fileName,   volume: customSounds.opening.volume },
-            category:  { file: customSounds.category.fileName,  volume: customSounds.category.volume },
-            qIntro:    { file: customSounds.qIntro.fileName,    volume: customSounds.qIntro.volume },
-            qAfter:    { file: customSounds.qAfter.fileName,    volume: customSounds.qAfter.volume },
-            ending:    { file: customSounds.ending.fileName,    volume: customSounds.ending.volume }
-        },
-        setlist: setlist.map(cat => ({
-            folder: cat.folder,
-            displayName: cat.displayName,
-            color: cat.color,
-            mode: cat.mode || 'slide',
-            questions: cat.questions.map(q => ({ name: q.name, fullPath: q.fullPath, isColor: q.isColor }))
-        }))
-    };
+// --- 6. Config Save/Load (Setlist version + bundled folder package) ---
+function downloadConfigJsonFile(config) {
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1304,10 +1279,86 @@ function saveConfig() {
     URL.revokeObjectURL(a.href);
 }
 
-async function loadConfig(input) {
-    if (!rootHandle) { alert("先にフォルダを接続してください"); return; }
-    const text = await input.files[0].text();
-    const config = JSON.parse(text);
+async function writeBlobToRelativePath(rootDir, relativePath, blob) {
+    const parts = relativePath.replace(/\\/g, '/').split('/').filter(Boolean);
+    if (parts.length === 0) throw new Error('empty path');
+    const fileName = parts.pop();
+    let dir = rootDir;
+    for (const part of parts) {
+        dir = await dir.getDirectoryHandle(part, { create: true });
+    }
+    const fh = await dir.getFileHandle(fileName, { create: true });
+    const writable = await fh.createWritable();
+    await writable.write(blob);
+    await writable.close();
+}
+
+async function tryResolveSoundFileHandle(rootDir, fileRef) {
+    if (!fileRef || typeof fileRef !== 'string') return null;
+    const normalized = fileRef.replace(/\\/g, '/').trim();
+    const parts = normalized.split('/').filter(Boolean);
+    try {
+        if (parts.length >= 2) {
+            let dir = rootDir;
+            for (let i = 0; i < parts.length - 1; i++) {
+                dir = await dir.getDirectoryHandle(parts[i]);
+            }
+            return await dir.getFileHandle(parts[parts.length - 1]);
+        }
+        const base = parts[0];
+        try {
+            const sd = await rootDir.getDirectoryHandle(SOUND_PACK_DIR);
+            return await sd.getFileHandle(base);
+        } catch (_) { /* */ }
+        return await rootDir.getFileHandle(base);
+    } catch (_) {
+        return null;
+    }
+}
+
+async function bindSoundSlotFromFileHandle(slot, fileHandle) {
+    const file = await fileHandle.getFile();
+    const url = URL.createObjectURL(file);
+    const audio = new Audio(url);
+    audio.preload = 'auto';
+    if (customSounds[slot].audio) {
+        customSounds[slot].audio.pause();
+        URL.revokeObjectURL(customSounds[slot].audio.src);
+    }
+    customSounds[slot].audio = audio;
+    customSounds[slot].fileName = file.name;
+    audio.volume = getVolume(slot);
+    const nameEl = document.getElementById('sound-name-' + slot);
+    nameEl.textContent = file.name;
+    nameEl.classList.add('has-file');
+    if (slot === 'opening') invalidateOpeningDecodedBuffer();
+}
+
+async function tryBindSoundFromRoot(slot, filePathOrName) {
+    if (!rootHandle) return;
+    if (!filePathOrName) {
+        clearCustomSound(slot);
+        return;
+    }
+    const nameEl = document.getElementById('sound-name-' + slot);
+    const fh = await tryResolveSoundFileHandle(rootHandle, filePathOrName);
+    if (!fh) {
+        if (customSounds[slot].audio) {
+            customSounds[slot].audio.pause();
+            URL.revokeObjectURL(customSounds[slot].audio.src);
+            customSounds[slot].audio = null;
+        }
+        customSounds[slot].fileName = null;
+        nameEl.textContent = filePathOrName + ' (見つかりません)';
+        nameEl.classList.remove('has-file');
+        if (slot === 'opening') invalidateOpeningDecodedBuffer();
+        return;
+    }
+    await bindSoundSlotFromFileHandle(slot, fh);
+}
+
+async function applyConfigFromObject(config) {
+    closeCategoryDetail();
 
     if (config.speeds) {
         document.getElementById('speed1').value = config.speeds[0];
@@ -1319,7 +1370,6 @@ async function loadConfig(input) {
         document.getElementById('countdown-sec').value = config.countdown.seconds;
         toggleCountdownInput();
     }
-
     if (config.showTitle) {
         if (config.showTitle.main) document.getElementById('show-title').value = config.showTitle.main;
         if (config.showTitle.sub) document.getElementById('show-subtitle').value = config.showTitle.sub;
@@ -1331,7 +1381,7 @@ async function loadConfig(input) {
             config.sounds.start2 = config.sounds.start;
             config.sounds.start3 = config.sounds.start;
         }
-        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending']) {
+        for (const slot of SOUND_CONFIG_SLOTS) {
             const saved = config.sounds[slot];
             if (!saved) continue;
             const sObj = typeof saved === 'object' ? saved : { file: saved, volume: 0.5 };
@@ -1340,14 +1390,15 @@ async function loadConfig(input) {
                 const volSlider = document.getElementById('sound-vol-' + slot);
                 const volLabel = document.getElementById('sound-vol-label-' + slot);
                 if (volSlider) volSlider.value = Math.round(sObj.volume * 100);
-                if (volLabel) volLabel.textContent = Math.round(sObj.volume * 100);
-            }
-            const nameEl = document.getElementById('sound-name-' + slot);
-            if (sObj.file) {
-                nameEl.textContent = sObj.file + ' (要再選択)';
-                nameEl.classList.remove('has-file');
+                if (volLabel) volLabel.textContent = String(Math.round(sObj.volume * 100));
             }
         }
+        await Promise.all(SOUND_CONFIG_SLOTS.map(async (slot) => {
+            const saved = config.sounds[slot];
+            if (!saved) return;
+            const sObj = typeof saved === 'object' ? saved : { file: saved, volume: 0.5 };
+            await tryBindSoundFromRoot(slot, sObj.file);
+        }));
     }
 
     if (config.version >= 3 && config.setlist) {
@@ -1381,7 +1432,6 @@ async function loadConfig(input) {
         }
         renderSetlist();
     } else if (config.folder && config.order) {
-        // v2 backward compatibility
         await addFolderToSetlist(config.folder);
         const cat = setlist.find(s => s.folder === config.folder);
         if (cat) {
@@ -1394,7 +1444,118 @@ async function loadConfig(input) {
         }
         renderSetlist();
     }
+}
 
+async function tryAutoLoadBundledConfig() {
+    if (!rootHandle) return false;
+    try {
+        const fh = await rootHandle.getFileHandle(BUNDLED_CONFIG_FILENAME);
+        const file = await fh.getFile();
+        await applyConfigFromObject(JSON.parse(await file.text()));
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+async function saveConfig() {
+    if (setlist.length === 0) return;
+
+    const setlistPayload = setlist.map(cat => ({
+        folder: cat.folder,
+        displayName: cat.displayName,
+        color: cat.color,
+        mode: cat.mode || 'slide',
+        questions: cat.questions.map(q => ({ name: q.name, fullPath: q.fullPath, isColor: q.isColor }))
+    }));
+
+    if (rootHandle) {
+        try {
+            const perm = await rootHandle.requestPermission({ mode: 'readwrite' });
+            if (perm === 'granted') {
+                const packPaths = {};
+                for (const slot of SOUND_CONFIG_SLOTS) {
+                    if (customSounds[slot].audio) {
+                        const blob = await fetch(customSounds[slot].audio.src).then(r => r.blob());
+                        const origName = customSounds[slot].fileName || '';
+                        const extMatch = origName.match(/(\.[a-z0-9]+)$/i);
+                        const ext = extMatch ? extMatch[1].toLowerCase() : '.m4a';
+                        const relPath = `${SOUND_PACK_DIR}/${slot}${ext}`;
+                        await writeBlobToRelativePath(rootHandle, relPath, blob);
+                        packPaths[slot] = relPath;
+                    } else {
+                        packPaths[slot] = null;
+                    }
+                }
+                const sounds = {};
+                for (const slot of SOUND_CONFIG_SLOTS) {
+                    sounds[slot] = { file: packPaths[slot], volume: customSounds[slot].volume };
+                }
+                const config = {
+                    version: 10,
+                    speeds: [
+                        document.getElementById('speed1').value,
+                        document.getElementById('speed2').value,
+                        document.getElementById('speed3').value
+                    ],
+                    countdown: {
+                        enabled: document.getElementById('countdown-toggle').checked,
+                        seconds: document.getElementById('countdown-sec').value
+                    },
+                    showTitle: {
+                        main: document.getElementById('show-title').value,
+                        sub: document.getElementById('show-subtitle').value
+                    },
+                    sounds,
+                    setlist: setlistPayload
+                };
+                await writeBlobToRelativePath(
+                    rootHandle,
+                    BUNDLED_CONFIG_FILENAME,
+                    new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
+                );
+                document.getElementById('file-status').innerText =
+                    '✓ ' + rootHandle.name + '（' + BUNDLED_CONFIG_FILENAME + ' と ' + SOUND_PACK_DIR + '/ を保存）';
+                return;
+            }
+        } catch (e) {
+            console.warn('bundled save failed', e);
+            alert('フォルダへの一括保存に失敗しました: ' + (e.message || e) + '\nJSON のみダウンロードします。');
+        }
+    }
+
+    const sounds = {};
+    for (const slot of SOUND_CONFIG_SLOTS) {
+        sounds[slot] = { file: customSounds[slot].fileName, volume: customSounds[slot].volume };
+    }
+    downloadConfigJsonFile({
+        version: 10,
+        speeds: [
+            document.getElementById('speed1').value,
+            document.getElementById('speed2').value,
+            document.getElementById('speed3').value
+        ],
+        countdown: {
+            enabled: document.getElementById('countdown-toggle').checked,
+            seconds: document.getElementById('countdown-sec').value
+        },
+        showTitle: {
+            main: document.getElementById('show-title').value,
+            sub: document.getElementById('show-subtitle').value
+        },
+        sounds,
+        setlist: setlistPayload
+    });
+}
+
+async function loadConfig(input) {
+    if (!rootHandle) { alert("先にフォルダを接続してください"); input.value = ''; return; }
+    try {
+        const text = await input.files[0].text();
+        await applyConfigFromObject(JSON.parse(text));
+    } catch (e) {
+        alert('設定の読み込みに失敗しました: ' + (e.message || String(e)));
+    }
     input.value = '';
 }
 
