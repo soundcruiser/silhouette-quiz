@@ -315,17 +315,17 @@
         </div>
         <div class="play-bottom">
             <div class="play-controls" id="quiz-controls">
-                <button type="button" class="btn-play btn-nav" data-play-hover="prevQuiz">◀</button>
-                <button type="button" class="btn-play btn-speed" data-play-hover="startAnim" data-play-arg="1">爆速 (1)</button>
-                <button type="button" class="btn-play btn-speed" data-play-hover="startAnim" data-play-arg="2">中速 (2)</button>
-                <button type="button" class="btn-play btn-speed" data-play-hover="startAnim" data-play-arg="3">低速 (3)</button>
-                <button type="button" class="btn-play btn-pause" id="btn-pause" data-play-hover="togglePause">⏸</button>
-                <button type="button" class="btn-play btn-replay" data-play-hover="replayAnim">↻</button>
-                <button type="button" class="btn-play btn-reveal" data-play-hover="reveal">★ 正解</button>
-                <button type="button" class="btn-play btn-nav" data-play-hover="nextQuiz">▶</button>
+                <button type="button" class="btn-play btn-nav" onclick="prevQuiz()">◀</button>
+                <button type="button" class="btn-play btn-speed" onclick="startAnim(1)">爆速 (1)</button>
+                <button type="button" class="btn-play btn-speed" onclick="startAnim(2)">中速 (2)</button>
+                <button type="button" class="btn-play btn-speed" onclick="startAnim(3)">低速 (3)</button>
+                <button type="button" class="btn-play btn-pause" id="btn-pause" onclick="togglePause()">⏸</button>
+                <button type="button" class="btn-play btn-replay" onclick="replayAnim()">↻</button>
+                <button type="button" class="btn-play btn-reveal" onclick="reveal()">★ 正解</button>
+                <button type="button" class="btn-play btn-nav" onclick="nextQuiz()">▶</button>
             </div>
             <div class="show-controls" id="show-controls" style="display:none;">
-                <button type="button" class="btn-play btn-show-advance" id="btn-show-advance" data-play-hover="advanceShow">START</button>
+                <button type="button" class="btn-play btn-show-advance" id="btn-show-advance" onclick="advanceShow()">START</button>
             </div>
         </div>
     </div>

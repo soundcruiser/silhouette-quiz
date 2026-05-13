@@ -16,6 +16,11 @@ let bgmThinkingFadeGen = 0;
 let showPhase = 'opening'; // 'opening' | 'category' | 'quiz' | 'ending'
 
 let controlsTimer = null;
+/** プレイ中・画面上部へ近づいたときのナビ表示用 */
+let topChromeTimer = null;
+/** 近接ゾーン出入り検知（中央でのmousemoveで隠しタイマーが延び続けないようにする） */
+let playChromeWasInTopZone = false;
+let playChromeWasInBottomZone = false;
 let loadQuizId = 0;
 let quizLoading = false;
 let lastAdvanceTime = 0;
@@ -51,6 +56,7 @@ const quizControls = document.getElementById('quiz-controls');
 const showControlsEl = document.getElementById('show-controls');
 const btnShowAdvance = document.getElementById('btn-show-advance');
 const stageEl = document.querySelector('.stage');
+const playBottom = document.querySelector('.play-bottom');
 
 // --- Audio (Web Audio API + Custom Sounds) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1161,6 +1167,12 @@ function switchMode(mode) {
         stopAllClonedCustomSounds();
         currentSetIdx = 0;
         currentQIdx = 0;
+        document.body.classList.remove('play-chrome-top');
+        playBottom?.classList.remove('visible');
+        clearTimeout(controlsTimer);
+        clearTimeout(topChromeTimer);
+        playChromeWasInTopZone = false;
+        playChromeWasInBottomZone = false;
         enterShowPhase('opening');
     } else {
         hideThinkingOverlay();
@@ -1168,6 +1180,12 @@ function switchMode(mode) {
         stopBGM();
         stopOpeningLoop();
         hideShowOverlay();
+        document.body.classList.remove('play-chrome-top');
+        playBottom?.classList.remove('visible');
+        clearTimeout(controlsTimer);
+        clearTimeout(topChromeTimer);
+        playChromeWasInTopZone = false;
+        playChromeWasInBottomZone = false;
     }
 }
 
@@ -2179,54 +2197,77 @@ window.addEventListener('keydown', (e) => {
     else if (k === 'r') replayAnim();
 });
 
-// --- 9. Play Controls Auto-hide ---
-const playBottom = document.querySelector('.play-bottom');
+// --- 9. Play chrome: 上下端の「近接ゾーン」でのみナビ・操作バーを表示 ---
+const PLAY_CHROME_TOP_PX = 100;
+const PLAY_CHROME_BOTTOM_PX = 150;
 
-function showPlayControls() {
-    playBottom.classList.add('visible');
-    clearTimeout(controlsTimer);
-    controlsTimer = setTimeout(() => {
-        playBottom.classList.remove('visible');
-    }, 3000);
+function isPlayModeVisible() {
+    return document.getElementById('play-mode').style.display !== 'none';
 }
 
-document.querySelector('.stage')?.addEventListener('mousemove', () => {
-    if (document.getElementById('play-mode').style.display !== 'none') {
-        showPlayControls();
+function armHidePlayBottom(delayMs) {
+    clearTimeout(controlsTimer);
+    controlsTimer = setTimeout(() => {
+        playBottom?.classList.remove('visible');
+    }, delayMs);
+}
+
+function extendPlayBottomChrome() {
+    if (!playBottom) return;
+    playBottom.classList.add('visible');
+    armHidePlayBottom(3000);
+}
+
+function armHideTopChrome(delayMs) {
+    clearTimeout(topChromeTimer);
+    topChromeTimer = setTimeout(() => {
+        document.body.classList.remove('play-chrome-top');
+    }, delayMs);
+}
+
+function extendTopChrome() {
+    document.body.classList.add('play-chrome-top');
+    armHideTopChrome(3000);
+}
+
+document.querySelector('.stage')?.addEventListener('mousemove', (e) => {
+    if (!isPlayModeVisible()) return;
+    const y = e.clientY;
+    const h = window.innerHeight;
+
+    const inTop = y < PLAY_CHROME_TOP_PX;
+    if (inTop) {
+        extendTopChrome();
+    } else if (playChromeWasInTopZone) {
+        armHideTopChrome(700);
     }
+    playChromeWasInTopZone = inTop;
+
+    const inBottom = y > h - PLAY_CHROME_BOTTOM_PX;
+    if (inBottom) {
+        extendPlayBottomChrome();
+    } else if (playChromeWasInBottomZone) {
+        armHidePlayBottom(1200);
+    }
+    playChromeWasInBottomZone = inBottom;
 });
+
+document.querySelector('nav')?.addEventListener('mouseenter', () => {
+    if (!isPlayModeVisible()) return;
+    document.body.classList.add('play-chrome-top');
+    clearTimeout(topChromeTimer);
+});
+document.querySelector('nav')?.addEventListener('mouseleave', () => {
+    if (!isPlayModeVisible()) return;
+    armHideTopChrome(1500);
+});
+
 playBottom?.addEventListener('mouseenter', () => {
     clearTimeout(controlsTimer);
     playBottom.classList.add('visible');
 });
 playBottom?.addEventListener('mouseleave', () => {
-    controlsTimer = setTimeout(() => {
-        playBottom.classList.remove('visible');
-    }, 1500);
-});
-
-/** プレイ中コントロールはクリックではなくホバー（mouseenter）で実行 */
-function runPlayHoverAction(el) {
-    const action = el.dataset.playHover;
-    if (!action) return;
-    if (action === 'startAnim') {
-        const n = Number(el.dataset.playArg);
-        if (n >= 1 && n <= 3) startAnim(n);
-        return;
-    }
-    switch (action) {
-        case 'prevQuiz': prevQuiz(); break;
-        case 'nextQuiz': nextQuiz(); break;
-        case 'togglePause': togglePause(); break;
-        case 'replayAnim': replayAnim(); break;
-        case 'reveal': reveal(); break;
-        case 'advanceShow': advanceShow(); break;
-        default: break;
-    }
-}
-
-document.querySelectorAll('#play-mode [data-play-hover]').forEach((el) => {
-    el.addEventListener('mouseenter', () => runPlayHoverAction(el));
+    armHidePlayBottom(1500);
 });
 
 // --- 10. Auto-restore previous folder on load ---
