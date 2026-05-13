@@ -100,7 +100,7 @@ const SOUND_PACK_DIR = '_sounds';
 const SOUND_CONFIG_SLOTS = ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter', 'ending', 'thinkingLoop'];
 
 /** 考え中ループ SE 鳴っている間の BGM 音量（スライダー値に対する倍率） */
-const THINKING_BGM_DUCK_MULT = 0.4;
+const THINKING_BGM_DUCK_MULT = 0.2;
 const THINKING_BGM_DUCK_OUT_MS = 380;
 const THINKING_BGM_DUCK_IN_MS = 520;
 
