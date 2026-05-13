@@ -19,8 +19,18 @@ let controlsTimer = null;
 let loadQuizId = 0;
 let quizLoading = false;
 let lastAdvanceTime = 0;
+/** スライド終了検知用（revealPop 等の別 animationend と混ぜない） */
+let slideAnimEndListener = null;
 
 const CATEGORY_COLORS = ['#ff2d8a', '#00e5ff', '#ffe42d', '#8aff2d', '#ff8a2d', '#a78bfa'];
+
+function detachSlideAnimEndListener() {
+    if (slideAnimEndListener) {
+        quizImg.removeEventListener('animationend', slideAnimEndListener);
+        slideAnimEndListener = null;
+    }
+    quizImg.onanimationend = null;
+}
 
 // --- DOM References ---
 const gridEl = document.getElementById('grid');
@@ -366,6 +376,9 @@ function stopThinkingLoopSound(opts = {}) {
             thinkingLoopAudioEl.pause();
             thinkingLoopAudioEl.currentTime = 0;
         } catch (e) { /* ignore */ }
+        try {
+            thinkingLoopAudioEl.remove();
+        } catch (e) { /* ignore */ }
         thinkingLoopAudioEl = null;
     }
     if (!skipBgmRestore) {
@@ -385,11 +398,15 @@ function startThinkingLoopSound() {
         const a = customSounds.thinkingLoop.audio.cloneNode();
         a.loop = true;
         a.volume = getVolume('thinkingLoop');
+        a.setAttribute('data-thinking-loop', '');
+        a.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;opacity:0;pointer-events:none;';
         thinkingLoopAudioEl = a;
+        document.body.appendChild(a);
         a.play()
             .then(() => { duckBgmForThinkingLoop(); })
             .catch(() => {
                 thinkingLoopAudioEl = null;
+                try { a.remove(); } catch (e) { /* ignore */ }
                 restoreBgmAfterThinkingLoop();
             });
     } else {
@@ -1303,7 +1320,7 @@ function syncThinkingOverlayMessage() {
     main.textContent = raw;
 }
 
-function showThinkingOverlay() {
+async function showThinkingOverlay() {
     if (thinkingOverlayVisible) return;
     const overlay = document.getElementById('thinking-overlay');
     if (!overlay) return;
@@ -1312,7 +1329,9 @@ function showThinkingOverlay() {
     thinkingOverlayVisible = true;
     overlay.classList.add('visible');
     overlay.setAttribute('aria-hidden', 'false');
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    try {
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+    } catch (e) { /* ignore */ }
     startThinkingLoopSound();
     sendRemoteState();
 }
@@ -1357,7 +1376,7 @@ async function loadQuiz() {
     playQIntroSound();
 
     const item = questions[currentQIdx];
-    quizImg.onanimationend = null;
+    detachSlideAnimEndListener();
     quizImg.className = '';
     const url = await getFileUrl(item);
     if (thisId !== loadQuizId) return;
@@ -1468,15 +1487,21 @@ function executeAnim(speedNum) {
 
     startTimer(dur);
 
-    quizImg.onanimationend = () => {
+    detachSlideAnimEndListener();
+    slideAnimEndListener = (ev) => {
+        if (ev.target !== quizImg) return;
+        const animName = ev.animationName || '';
+        if (!animName.includes('slideLeft')) return;
+        detachSlideAnimEndListener();
         quizImg.classList.remove('animating');
         quizImg.style.left = '0';
         quizImg.style.transform = 'translateX(110vw)';
         resetAnimState();
         if (showPhase === 'quiz' && !quizLoading && getCurrentMode() === 'slide') {
-            showThinkingOverlay();
+            void showThinkingOverlay();
         }
     };
+    quizImg.addEventListener('animationend', slideAnimEndListener);
 }
 
 function startTimer(dur) {
@@ -1537,7 +1562,7 @@ function reveal() {
     hideThinkingOverlay();
     playRevealSound();
     resetAnimState();
-    quizImg.onanimationend = null;
+    detachSlideAnimEndListener();
 
     quizImg.classList.remove('animating', 'is-silhouette', 'revealed-img');
     quizImg.style.animation = '';
@@ -2040,6 +2065,7 @@ function escapeAction() {
         return;
     }
     if (animState.playing) {
+        detachSlideAnimEndListener();
         resetAnimState();
         quizImg.style.animation = '';
         quizImg.style.left = '0';
