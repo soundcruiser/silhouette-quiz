@@ -113,6 +113,15 @@
                 <button class="small-btn sound-test-btn" id="sound-test-countdown" onclick="testSound('countdown')">▶</button>
                 <button class="small-btn sound-clear-btn" onclick="clearCustomSound('countdown')">✕</button>
             </div>
+            <div class="sound-slot" data-slot="opening">
+                <span class="sound-label">🎬 オープニング</span>
+                <span class="sound-file-name" id="sound-name-opening">デフォルト</span>
+                <input type="range" class="sound-volume" id="sound-vol-opening" min="0" max="100" value="50" oninput="updateVolume('opening', this.value)">
+                <span class="sound-vol-label" id="sound-vol-label-opening">50</span>
+                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('opening', this)" hidden></label>
+                <button class="small-btn sound-test-btn" id="sound-test-opening" onclick="testSound('opening')">▶</button>
+                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('opening')">✕</button>
+            </div>
             <div class="sound-slot" data-slot="category">
                 <span class="sound-label">📂 カテゴリ</span>
                 <span class="sound-file-name" id="sound-name-category">デフォルト</span>

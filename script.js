@@ -44,6 +44,7 @@ const customSounds = {
     start3:    { audio: null, fileName: null, volume: 0.5 },
     reveal:    { audio: null, fileName: null, volume: 0.5 },
     countdown: { audio: null, fileName: null, volume: 0.5 },
+    opening:   { audio: null, fileName: null, volume: 0.5 },
     category:  { audio: null, fileName: null, volume: 0.5 },
     qIntro:    { audio: null, fileName: null, volume: 0.5 },
     qAfter:    { audio: null, fileName: null, volume: 0.5 }
@@ -99,6 +100,16 @@ function playCountdownTick(remaining) {
     const v = getVolume('countdown');
     playCustomOrDefault('countdown', () => {
         playTone(cdTones[remaining % cdTones.length], 0.12, 'sine', v * 0.3);
+    });
+}
+
+function playOpeningSound() {
+    const v = getVolume('opening');
+    playCustomOrDefault('opening', () => {
+        playTone(392, 0.11, 'triangle', v * 0.2);
+        setTimeout(() => playTone(523, 0.12, 'triangle', v * 0.24), 95);
+        setTimeout(() => playTone(659, 0.14, 'sine', v * 0.26), 210);
+        setTimeout(() => playTone(784, 0.16, 'sine', v * 0.22), 360);
     });
 }
 
@@ -205,6 +216,8 @@ function testSound(slot) {
         playRevealSound();
     } else if (slot === 'countdown') {
         playCountdownTick(3);
+    } else if (slot === 'opening') {
+        playOpeningSound();
     } else if (slot === 'category') {
         playCategorySound();
     } else if (slot === 'qIntro') {
@@ -230,7 +243,7 @@ function stopAllPreviews() {
         previewAudio.currentTime = 0;
         previewAudio = null;
     }
-    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'category', 'qIntro', 'qAfter']) {
+    for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter']) {
         const btn = document.getElementById('sound-test-' + slot);
         if (btn) { btn.classList.remove('playing'); btn.textContent = '▶'; }
     }
@@ -642,6 +655,8 @@ function renderOpening() {
             <div class="show-deco-line"></div>
         </div>
     `;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    playOpeningSound();
 }
 
 function renderCategoryTitle() {
@@ -1000,7 +1015,7 @@ function prevQuiz() {
 function saveConfig() {
     if (setlist.length === 0) return;
     const config = {
-        version: 7,
+        version: 8,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -1021,6 +1036,7 @@ function saveConfig() {
             start3:    { file: customSounds.start3.fileName,    volume: customSounds.start3.volume },
             reveal:    { file: customSounds.reveal.fileName,    volume: customSounds.reveal.volume },
             countdown: { file: customSounds.countdown.fileName, volume: customSounds.countdown.volume },
+            opening:   { file: customSounds.opening.fileName,   volume: customSounds.opening.volume },
             category:  { file: customSounds.category.fileName,  volume: customSounds.category.volume },
             qIntro:    { file: customSounds.qIntro.fileName,    volume: customSounds.qIntro.volume },
             qAfter:    { file: customSounds.qAfter.fileName,    volume: customSounds.qAfter.volume }
@@ -1068,7 +1084,7 @@ async function loadConfig(input) {
             config.sounds.start2 = config.sounds.start;
             config.sounds.start3 = config.sounds.start;
         }
-        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'category', 'qIntro', 'qAfter']) {
+        for (const slot of ['bgm', 'start1', 'start2', 'start3', 'reveal', 'countdown', 'opening', 'category', 'qIntro', 'qAfter']) {
             const saved = config.sounds[slot];
             if (!saved) continue;
             const sObj = typeof saved === 'object' ? saved : { file: saved, volume: 0.5 };
