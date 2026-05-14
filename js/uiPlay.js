@@ -462,7 +462,7 @@ export function enterShowPhase(phase) {
         btnShowAdvance.textContent = 'READY';
     } else if (phase === 'ending') {
         renderEnding();
-        btnShowAdvance.textContent = 'CONFIG に戻る';
+        btnShowAdvance.textContent = '設定に戻る';
     }
     sendRemoteState();
 }

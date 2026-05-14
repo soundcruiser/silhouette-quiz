@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a0a14">
+    <meta name="theme-color" content="#0c0c0f">
     <title>Remote Controller</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: #0a0a12;
-            color: #fff;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: #0c0c0f;
+            color: #fafafa;
             height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             user-select: none;
+            -webkit-font-smoothing: antialiased;
         }
 
         .status-bar {
@@ -25,8 +26,8 @@
             align-items: center;
             justify-content: space-between;
             padding: 12px 16px;
-            background: #12121e;
-            border-bottom: 1px solid #222;
+            background: #121215;
+            border-bottom: 1px solid #27272a;
             font-size: 13px;
             flex-shrink: 0;
         }
@@ -35,33 +36,34 @@
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
-            background: #555;
+            background: #52525b;
             transition: background 0.3s;
         }
-        .status-dot.connected { background: #8aff2d; box-shadow: 0 0 8px #8aff2d; }
-        .status-text { color: #888; }
+        .status-dot.connected { background: #4ade80; }
+        .status-text { color: #a1a1aa; }
 
         .info-panel {
             padding: 12px 16px;
-            background: #12121e;
+            background: #121215;
             text-align: center;
             flex-shrink: 0;
+            border-bottom: 1px solid #27272a;
         }
         .info-phase {
             font-size: 11px;
-            color: #888;
-            letter-spacing: 2px;
+            color: #a1a1aa;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
         }
         .info-main {
             font-size: 20px;
-            font-weight: 800;
-            color: var(--cat-color, #ff2d8a);
+            font-weight: 700;
+            color: var(--cat-color, #818cf8);
             margin: 4px 0;
         }
         .info-sub {
             font-size: 13px;
-            color: #aaa;
+            color: #a1a1aa;
         }
 
         .controls {
@@ -86,52 +88,54 @@
             flex: 1;
             padding: 20px 12px;
             border: none;
-            border-radius: 14px;
-            font-size: 17px;
-            font-weight: 800;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.1s;
+            transition: transform 0.1s, opacity 0.1s, filter 0.15s;
             position: relative;
             overflow: hidden;
         }
-        .btn:active { transform: scale(0.95); opacity: 0.8; }
+        .btn:active { transform: scale(0.98); opacity: 0.92; }
         .btn:disabled { opacity: 0.25; pointer-events: none; }
 
         .btn-advance {
-            background: linear-gradient(135deg, #ff2d8a, #ff6b3d);
+            background: linear-gradient(180deg, #8b93ff 0%, #6366f1 100%);
             color: #fff;
-            font-size: 22px;
-            padding: 28px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-size: 20px;
+            padding: 26px;
+            border: 1px solid rgba(99, 102, 241, 0.45);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.35);
         }
 
         .btn-reveal {
-            background: linear-gradient(135deg, #ffe42d, #ff8a2d);
-            color: #1a1a2e;
-            font-size: 20px;
-            padding: 24px;
+            background: linear-gradient(180deg, #fcd34d 0%, #fb923c 100%);
+            color: #0c0c0f;
+            font-size: 18px;
+            padding: 22px;
+            border: 1px solid rgba(251, 146, 60, 0.4);
         }
 
         .btn-speed {
-            background: #1a1a2e;
-            color: #00e5ff;
-            border: 2px solid #00e5ff33;
-            font-size: 15px;
+            background: #18181b;
+            color: #2dd4bf;
+            border: 1px solid rgba(45, 212, 191, 0.35);
+            font-size: 14px;
             padding: 16px;
         }
 
         .btn-nav {
-            background: #1a1a2e;
-            color: #fff;
-            border: 2px solid #333;
-            font-size: 20px;
+            background: #18181b;
+            color: #fafafa;
+            border: 1px solid #27272a;
+            font-size: 18px;
             padding: 18px;
         }
 
         .btn-pause {
-            background: #1a1a2e;
-            color: #a78bfa;
-            border: 2px solid #a78bfa33;
+            background: #18181b;
+            color: #a1a1aa;
+            border: 1px solid #3f3f46;
         }
 
         .connect-screen {
@@ -143,12 +147,12 @@
             gap: 16px;
             padding: 32px;
         }
-        .connect-screen h1 { font-size: 20px; color: #ff2d8a; }
-        .connect-screen p { color: #888; font-size: 14px; text-align: center; }
+        .connect-screen h1 { font-size: 20px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; }
+        .connect-screen p { color: #a1a1aa; font-size: 14px; text-align: center; }
         .spinner {
             width: 40px; height: 40px;
-            border: 3px solid #333;
-            border-top-color: #ff2d8a;
+            border: 3px solid #27272a;
+            border-top-color: #818cf8;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -164,24 +168,24 @@
         <span class="status-dot" id="status-dot"></span>
         <span class="status-text" id="status-text">接続中...</span>
     </div>
-    <span style="color:#555; font-size:12px;">REMOTE</span>
+    <span style="color:#71717a; font-size:12px; font-weight:600; letter-spacing:0.14em;">REMOTE</span>
 </div>
 
 <div class="connect-screen" id="connect-screen">
     <h1>SILHOUETTE QUIZ</h1>
     <div id="connect-form">
-        <p style="color:#888; margin-bottom:12px;">PCに表示されたIDを入力</p>
+        <p style="color:#a1a1aa; margin-bottom:12px;">PCに表示されたIDを入力</p>
         <div style="display:flex; gap:8px;">
             <input type="text" id="id-input" placeholder="sq-xxxxxx" autocapitalize="off" autocorrect="off" spellcheck="false"
-                style="flex:1; padding:14px 16px; font-size:18px; font-weight:700; font-family:monospace; border-radius:12px; border:2px solid #333; background:#1a1a2e; color:#00e5ff; text-align:center; outline:none;">
-            <button onclick="manualConnect()" style="padding:14px 20px; font-size:16px; font-weight:800; border:none; border-radius:12px; background:#ff2d8a; color:#fff; cursor:pointer;">接続</button>
+                style="flex:1; padding:14px 16px; font-size:17px; font-weight:600; font-family:ui-monospace,monospace; border-radius:10px; border:1px solid #27272a; background:#18181b; color:#2dd4bf; text-align:center; outline:none;">
+            <button onclick="manualConnect()" style="padding:14px 20px; font-size:15px; font-weight:600; border:none; border-radius:10px; background:#6366f1; color:#fff; cursor:pointer;">接続</button>
         </div>
     </div>
     <div id="connect-loading" class="hidden">
         <div class="spinner"></div>
         <p style="margin-top:12px;">接続中...</p>
     </div>
-    <p id="connect-error" style="color:#ff2d8a; margin-top:12px;" class="hidden"></p>
+    <p id="connect-error" style="color:#f87171; margin-top:12px; font-weight:500;" class="hidden"></p>
 </div>
 
 <div class="info-panel hidden" id="info-panel">
@@ -193,22 +197,22 @@
 <div class="controls hidden" id="controls">
     <!-- Show phase: advance button -->
     <div id="ctrl-show">
-        <button class="btn btn-advance" onclick="send('advance')">NEXT ▶</button>
+        <button class="btn btn-advance" onclick="send('advance')">次へ</button>
     </div>
 
     <!-- Quiz phase: all controls -->
     <div id="ctrl-quiz" class="hidden">
         <div style="display:flex; flex-direction:column; gap:10px;">
-            <button class="btn btn-reveal" onclick="send('reveal')">★ 正解</button>
+            <button class="btn btn-reveal" onclick="send('reveal')">正解を表示</button>
             <div class="btn-row triple" id="speed-row">
-                <button class="btn btn-speed" onclick="send('start1')">⚡ 爆速</button>
-                <button class="btn btn-speed" onclick="send('start2')">⏩ 中速</button>
-                <button class="btn btn-speed" onclick="send('start3')">🐢 低速</button>
+                <button class="btn btn-speed" onclick="send('start1')">爆速</button>
+                <button class="btn btn-speed" onclick="send('start2')">中速</button>
+                <button class="btn btn-speed" onclick="send('start3')">低速</button>
             </div>
             <div class="btn-row">
-                <button class="btn btn-nav" onclick="send('prev')">◀ 前</button>
-                <button class="btn btn-pause" onclick="send('pause')" id="btn-pause-remote">⏸</button>
-                <button class="btn btn-nav" onclick="send('next')">次 ▶</button>
+                <button class="btn btn-nav" onclick="send('prev')">前へ</button>
+                <button class="btn btn-pause" onclick="send('pause')" id="btn-pause-remote">一時停止</button>
+                <button class="btn btn-nav" onclick="send('next')">次へ</button>
             </div>
         </div>
     </div>
