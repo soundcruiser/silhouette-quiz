@@ -1,5 +1,14 @@
 # Silhouette Master Pro
 
+## 公開サイト
+
+- メイン画面  
+  https://soundcruiser.github.io/silhouette-quiz/
+
+- リモコン画面  
+  https://soundcruiser.github.io/silhouette-quiz/remote.html
+
+  
 クイズイベント向けのシルエットクイズ進行ツールです。  
 画像をシルエット表示しながらスライドアニメで徐々に明かしていく、イベント演出に特化した Web アプリケーションです。
 

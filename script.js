@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-// --- 簡易アクセス制限 (v10.10) ---
-const SECRET_PASS = "1111"; // ここに好きな合言葉を設定してください
-=======
 // --- State ---
 let rootHandle = null;
 let setlist = []; // [{folder, displayName, color, mode:'slide'|'static', questions:[{name,fullPath,isColor,handle}]}]
@@ -18,7 +14,6 @@ let thinkingLoopPreviewTimer = null;
 /** BGM 線形フェードの打ち消し用（新しいフェードや即時同期で世代を進める） */
 let bgmThinkingFadeGen = 0;
 let showPhase = 'opening'; // 'startup' | 'opening' | 'category' | 'quiz' | 'ending'
->>>>>>> aab4fa7ea687723376d99cd7f8f80819b63539cd
 
 let controlsTimer = null;
 /** プレイ中・画面上部へ近づいたときのナビ表示用 */
