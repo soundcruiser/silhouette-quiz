@@ -28,8 +28,9 @@
 })();
 </script>
 
-<nav>
-    <div class="nav-left">
+<nav class="app-nav">
+    <div class="app-nav__inner">
+    <div class="nav-left nav-left--segmented">
         <button class="mode-btn active" id="nav-config" data-action="switchMode" data-mode="config" type="button">
             <svg class="nav-ico" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.292-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.292c.415.764-.42 1.6-1.185 1.184l-.292-.159a1.873 1.873 0 0 0-2.692 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.693-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.292A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-1.006.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/></svg>
             <span>設定</span>
@@ -40,9 +41,9 @@
         </button>
     </div>
     <div class="nav-right" id="nav-actions">
-        <button class="mode-btn folder-btn" data-action="requestDirectoryAccess" type="button">
+        <button class="mode-btn folder-btn" data-action="requestDirectoryAccess" type="button" title="画像フォルダを接続">
             <svg class="nav-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            <span>フォルダ接続</span>
+            <span>フォルダ</span>
         </button>
         <button class="mode-btn save-btn" data-action="saveConfig" type="button">
             <svg class="nav-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -56,24 +57,48 @@
             <svg class="nav-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
         </button>
     </div>
+    </div>
 </nav>
 
 <div id="config-mode" class="page">
+<div class="app-shell">
     <div class="control-panel" id="main-panel">
-        <div class="speed-group">
-            <span class="panel-label">速度(s)</span>
-            <input type="number" id="speed1" value="2" class="speed-input" min="0.5" step="0.5">
-            <input type="number" id="speed2" value="5" class="speed-input" min="0.5" step="0.5">
-            <input type="number" id="speed3" value="10" class="speed-input" min="0.5" step="0.5">
+        <div class="cp-toolbar" role="group" aria-label="クイズの基本設定">
+            <div class="cp-field">
+                <span class="field-label">スライド速度（秒）</span>
+                <div class="cp-inline-nums">
+                    <input type="number" id="speed1" value="2" class="speed-input" min="0.5" step="0.5" title="コース1">
+                    <input type="number" id="speed2" value="5" class="speed-input" min="0.5" step="0.5" title="コース2">
+                    <input type="number" id="speed3" value="10" class="speed-input" min="0.5" step="0.5" title="コース3">
+                </div>
+            </div>
+            <div class="cp-field">
+                <span class="field-label">カウントダウン</span>
+                <div class="cp-inline-nums cp-inline-nums--tight">
+                    <label class="toggle-label toggle-label--field">
+                        <input type="checkbox" id="countdown-toggle" checked data-change="toggleCountdownInput">
+                        <span class="toggle-text">ON</span>
+                    </label>
+                    <input type="number" id="countdown-sec" value="3" class="speed-input" min="1" max="10" step="1" title="秒">
+                </div>
+            </div>
+            <div class="cp-field cp-field--bulk">
+                <span class="field-label">一括</span>
+                <div class="cp-btn-pair">
+                    <button type="button" class="small-btn" data-action="bulkColor" data-value="true">全カラー</button>
+                    <button type="button" class="small-btn" data-action="bulkColor" data-value="false">全シルエット</button>
+                </div>
+            </div>
+            <div class="cp-field cp-field--titles">
+                <span class="field-label">ショータイトル</span>
+                <div class="cp-title-row">
+                    <input type="text" id="show-title" value="SILHOUETTE QUIZ" class="title-input title-input--main" placeholder="メインタイトル">
+                    <input type="text" id="show-subtitle" value="シルエットクイズ" class="title-input title-input--sub" placeholder="サブタイトル">
+                </div>
+            </div>
+            <div id="file-status" class="file-status-pill" role="status">フォルダ未接続</div>
         </div>
-        <div class="speed-group">
-            <label class="toggle-label">
-                <input type="checkbox" id="countdown-toggle" checked data-change="toggleCountdownInput">
-                <span class="panel-label">カウントダウン</span>
-            </label>
-            <input type="number" id="countdown-sec" value="3" class="speed-input" min="1" max="10" step="1">
-        </div>
-        <div class="title-group thinking-config-group">
+        <div class="title-group thinking-config-group cp-thinking">
             <span class="panel-label">スライド後の考え中</span>
             <textarea id="thinking-time-text" class="title-input thinking-time-input" rows="2" placeholder="メイン表示">thinkingTime</textarea>
             <label class="toggle-label thinking-se-toggle">
@@ -103,16 +128,6 @@
                     </div>
             </details>
         </div>
-        <div class="bulk-group">
-            <button class="small-btn" data-action="bulkColor" data-value="true">すべてカラー</button>
-            <button class="small-btn" data-action="bulkColor" data-value="false">すべてシルエット</button>
-        </div>
-        <div class="title-group">
-            <span class="panel-label">タイトル</span>
-            <input type="text" id="show-title" value="SILHOUETTE QUIZ" class="title-input" placeholder="メインタイトル">
-            <input type="text" id="show-subtitle" value="シルエットクイズ" class="title-input title-input-sub" placeholder="サブタイトル">
-        </div>
-        <div id="file-status">フォルダ未接続</div>
     </div>
 
     <div class="sound-section">
@@ -239,7 +254,7 @@
 
     <div class="remote-section">
         <div class="remote-header">
-            <h3 class="setlist-title">📱 リモコン</h3>
+            <h3 class="setlist-title">リモコン</h3>
             <span class="remote-status" id="remote-status">未接続</span>
         </div>
         <div class="remote-body">
@@ -253,8 +268,8 @@
         <div class="setlist-header">
             <h3 class="setlist-title">セットリスト</h3>
             <div class="setlist-header-actions">
-                <button class="small-btn mode-bulk-btn" data-action="setAllModes" data-mode="slide" title="全カテゴリをスライドに">🎬 全スライド</button>
-                <button class="small-btn mode-bulk-btn" data-action="setAllModes" data-mode="static" title="全カテゴリをじっくりに">🔍 全じっくり</button>
+                <button class="small-btn mode-bulk-btn" data-action="setAllModes" data-mode="slide" title="全カテゴリをスライドに">全スライド</button>
+                <button class="small-btn mode-bulk-btn" data-action="setAllModes" data-mode="static" title="全カテゴリをじっくりに">全じっくり</button>
                 <button class="small-btn" data-action="addAllFoldersToSetlist">全カテゴリ追加</button>
             </div>
         </div>
@@ -274,9 +289,10 @@
         </div>
         <div id="grid" class="grid-container"></div>
     </div>
+    </div>
 </div>
 
-<div id="play-mode" class="page play-page" style="display: none;">
+<div id="play-mode" class="play-page" style="display: none;">
     <div class="stage">
         <div class="canvas-wrapper">
             <div class="canvas-box" id="canvas-box">
@@ -330,18 +346,22 @@
                 </div>
         </div>
         <div class="play-bottom">
+            <div class="play-toolbar">
             <div class="play-controls" id="quiz-controls">
-                <button type="button" class="btn-play btn-nav" data-action="prevQuiz">◀</button>
-                <button type="button" class="btn-play btn-speed" data-action="startAnim" data-speed="1">爆速 (1)</button>
-                <button type="button" class="btn-play btn-speed" data-action="startAnim" data-speed="2">中速 (2)</button>
-                <button type="button" class="btn-play btn-speed" data-action="startAnim" data-speed="3">低速 (3)</button>
-                <button type="button" class="btn-play btn-pause" id="btn-pause" data-action="togglePause">⏸</button>
-                <button type="button" class="btn-play btn-replay" data-action="replayAnim">↻</button>
-                <button type="button" class="btn-play btn-reveal" data-action="reveal">★ 正解</button>
-                <button type="button" class="btn-play btn-nav" data-action="nextQuiz">▶</button>
+                <button type="button" class="btn-play btn-nav btn-ico" data-action="prevQuiz" aria-label="前の問題">◀</button>
+                <div class="play-speeds" role="group" aria-label="スライド速度">
+                    <button type="button" class="btn-play btn-speed btn-speed--1" data-action="startAnim" data-speed="1" title="爆速">1</button>
+                    <button type="button" class="btn-play btn-speed btn-speed--2" data-action="startAnim" data-speed="2" title="中速">2</button>
+                    <button type="button" class="btn-play btn-speed btn-speed--3" data-action="startAnim" data-speed="3" title="低速">3</button>
+                </div>
+                <button type="button" class="btn-play btn-pause" id="btn-pause" data-action="togglePause" aria-label="一時停止">⏸</button>
+                <button type="button" class="btn-play btn-replay" data-action="replayAnim" aria-label="やり直し">↻</button>
+                <button type="button" class="btn-play btn-reveal" data-action="reveal">正解</button>
+                <button type="button" class="btn-play btn-nav btn-ico" data-action="nextQuiz" aria-label="次の問題">▶</button>
             </div>
             <div class="show-controls" id="show-controls" style="display:none;">
                 <button type="button" class="btn-play btn-show-advance" id="btn-show-advance" data-action="advanceShow">START</button>
+            </div>
             </div>
         </div>
     </div>
