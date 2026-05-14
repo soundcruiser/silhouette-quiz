@@ -14,6 +14,19 @@
     <script type="module" src="./js/main.js"></script>
 </head>
 <body>
+<script>
+(function () {
+    if (location.protocol !== 'file:') return;
+    var s = document.createElement('div');
+    s.id = 'file-protocol-banner';
+    s.setAttribute('role', 'alert');
+    s.style.cssText = 'position:fixed;z-index:2147483000;left:0;right:0;top:0;padding:12px 16px;font:14px/1.45 system-ui,sans-serif;background:#7f1d1d;color:#fecaca;border-bottom:2px solid #fca5a5;';
+    s.innerHTML = '<strong>file:// ではこのアプリは動きません（Chrome は ES Modules をブロックします）。</strong> ' +
+        'ターミナルでリポジトリ直下に移動し次を実行してから、ブラウザで <code>http://localhost:8787/</code> を開いてください: ' +
+        '<code style="background:rgba(0,0,0,.25);padding:2px 6px;border-radius:4px">python3 -m http.server 8787</code>';
+    document.body.insertAdjacentElement('afterbegin', s);
+})();
+</script>
 
 <nav>
     <div class="nav-left">
@@ -103,13 +116,103 @@
                         <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="bgm">✕</button>
                     </div>
                     <div class="sound-slot" data-slot="start1">
-                        <span class="sound-label">⚡ 爆速</span>
+                        <span class="sound-label">⚡ 爆速 (1)</span>
                         <span class="sound-file-name" id="sound-name-start1">デフォルト</span>
                         <input type="range" class="sound-volume" id="sound-vol-start1" min="0" max="100" value="50" data-input="updateVolume" data-slot="start1">
                         <span class="sound-vol-label" id="sound-vol-label-start1">50</span>
                         <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="start1" hidden></label>
                         <button class="small-btn sound-test-btn" id="sound-test-start1" data-action="testSound" data-slot="start1">▶</button>
                         <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="start1">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="start2">
+                        <span class="sound-label">⚡ 中速 (2)</span>
+                        <span class="sound-file-name" id="sound-name-start2">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-start2" min="0" max="100" value="50" data-input="updateVolume" data-slot="start2">
+                        <span class="sound-vol-label" id="sound-vol-label-start2">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="start2" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-start2" data-action="testSound" data-slot="start2">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="start2">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="start3">
+                        <span class="sound-label">⚡ 低速 (3)</span>
+                        <span class="sound-file-name" id="sound-name-start3">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-start3" min="0" max="100" value="50" data-input="updateVolume" data-slot="start3">
+                        <span class="sound-vol-label" id="sound-vol-label-start3">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="start3" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-start3" data-action="testSound" data-slot="start3">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="start3">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="reveal">
+                        <span class="sound-label">★ 正解</span>
+                        <span class="sound-file-name" id="sound-name-reveal">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-reveal" min="0" max="100" value="50" data-input="updateVolume" data-slot="reveal">
+                        <span class="sound-vol-label" id="sound-vol-label-reveal">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="reveal" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-reveal" data-action="testSound" data-slot="reveal">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="reveal">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="countdown">
+                        <span class="sound-label">⏱ カウントダウン</span>
+                        <span class="sound-file-name" id="sound-name-countdown">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-countdown" min="0" max="100" value="50" data-input="updateVolume" data-slot="countdown">
+                        <span class="sound-vol-label" id="sound-vol-label-countdown">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="countdown" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-countdown" data-action="testSound" data-slot="countdown">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="countdown">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="opening">
+                        <span class="sound-label">🎬 オープニング</span>
+                        <span class="sound-file-name" id="sound-name-opening">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-opening" min="0" max="100" value="50" data-input="updateVolume" data-slot="opening">
+                        <span class="sound-vol-label" id="sound-vol-label-opening">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="opening" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-opening" data-action="testSound" data-slot="opening">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="opening">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="category">
+                        <span class="sound-label">📂 カテゴリ</span>
+                        <span class="sound-file-name" id="sound-name-category">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-category" min="0" max="100" value="50" data-input="updateVolume" data-slot="category">
+                        <span class="sound-vol-label" id="sound-vol-label-category">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="category" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-category" data-action="testSound" data-slot="category">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="category">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="qIntro">
+                        <span class="sound-label">❔ 出題前</span>
+                        <span class="sound-file-name" id="sound-name-qIntro">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-qIntro" min="0" max="100" value="50" data-input="updateVolume" data-slot="qIntro">
+                        <span class="sound-vol-label" id="sound-vol-label-qIntro">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="qIntro" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-qIntro" data-action="testSound" data-slot="qIntro">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="qIntro">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="qAfter">
+                        <span class="sound-label">✓ 出題後</span>
+                        <span class="sound-file-name" id="sound-name-qAfter">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-qAfter" min="0" max="100" value="50" data-input="updateVolume" data-slot="qAfter">
+                        <span class="sound-vol-label" id="sound-vol-label-qAfter">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="qAfter" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-qAfter" data-action="testSound" data-slot="qAfter">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="qAfter">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="ending">
+                        <span class="sound-label">🏁 エンディング</span>
+                        <span class="sound-file-name" id="sound-name-ending">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-ending" min="0" max="100" value="50" data-input="updateVolume" data-slot="ending">
+                        <span class="sound-vol-label" id="sound-vol-label-ending">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="ending" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-ending" data-action="testSound" data-slot="ending">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="ending">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="thinkingLoop">
+                        <span class="sound-label">💭 考え中ループ</span>
+                        <span class="sound-file-name" id="sound-name-thinkingLoop">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-thinkingLoop" min="0" max="100" value="35" data-input="updateVolume" data-slot="thinkingLoop">
+                        <span class="sound-vol-label" id="sound-vol-label-thinkingLoop">35</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="thinkingLoop" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-thinkingLoop" data-action="testSound" data-slot="thinkingLoop">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="thinkingLoop">✕</button>
                     </div>
                     </div>
             </details>
