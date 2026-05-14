@@ -1170,6 +1170,7 @@ function switchMode(mode) {
     document.getElementById('nav-config').classList.toggle('active', mode === 'config');
     document.getElementById('nav-play').classList.toggle('active', mode === 'play');
     document.body.classList.toggle('is-playing', mode === 'play');
+    document.documentElement.classList.toggle('play-scroll-lock', mode === 'play');
     if (mode === 'play') {
         stopAllClonedCustomSounds();
         currentSetIdx = 0;
@@ -2307,6 +2308,14 @@ window.addEventListener('keydown', (e) => {
         return;
     }
 
+    if (
+        e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
+        e.key === 'PageUp' || e.key === 'PageDown' ||
+        e.key === 'Home' || e.key === 'End'
+    ) {
+        e.preventDefault();
+    }
+
     const k = e.key.toLowerCase();
 
     // Global play-mode keys
@@ -2364,13 +2373,20 @@ window.addEventListener('keydown', (e) => {
 });
 
 // --- 9. Play chrome: 上下端の「近接ゾーン」でのみナビ・操作バーを表示 ---
-const PLAY_CHROME_TOP_PX = 100;
-const PLAY_CHROME_BOTTOM_PX = 150;
+const PLAY_CHROME_TOP_PX = 72;
+const PLAY_CHROME_BOTTOM_PX = 110;
 const PLAY_CURSOR_HIDE_AFTER_MS = 2200;
 
 function isPlayModeVisible() {
     return document.getElementById('play-mode').style.display !== 'none';
 }
+
+window.addEventListener('wheel', (e) => {
+    if (!isPlayModeVisible()) return;
+    if (helpOverlay.classList.contains('visible')) return;
+    if (loadConfigModal && loadConfigModal.classList.contains('visible')) return;
+    e.preventDefault();
+}, { passive: false });
 
 function resetPlayCursorIdle() {
     if (!isPlayModeVisible()) {
@@ -2418,13 +2434,10 @@ function extendTopChrome() {
     armHideTopChrome(3000);
 }
 
-document.addEventListener('mousemove', () => {
-    resetPlayCursorIdle();
-}, { passive: true });
-
-document.querySelector('.stage')?.addEventListener('mousemove', (e) => {
+let playChromePointerRaf = 0;
+let playChromePendingClientY = null;
+function applyPlayChromeFromClientY(y) {
     if (!isPlayModeVisible()) return;
-    const y = e.clientY;
     const h = window.innerHeight;
 
     const inTop = y < PLAY_CHROME_TOP_PX;
@@ -2442,7 +2455,24 @@ document.querySelector('.stage')?.addEventListener('mousemove', (e) => {
         armHidePlayBottom(1200);
     }
     playChromeWasInBottomZone = inBottom;
-});
+}
+
+document.addEventListener('mousemove', () => {
+    resetPlayCursorIdle();
+}, { passive: true });
+
+document.querySelector('.stage')?.addEventListener('mousemove', (e) => {
+    if (!isPlayModeVisible()) return;
+    playChromePendingClientY = e.clientY;
+    if (playChromePointerRaf) return;
+    playChromePointerRaf = requestAnimationFrame(() => {
+        playChromePointerRaf = 0;
+        const y = playChromePendingClientY;
+        playChromePendingClientY = null;
+        if (y == null) return;
+        applyPlayChromeFromClientY(y);
+    });
+}, { passive: true });
 
 document.querySelector('nav')?.addEventListener('mouseenter', () => {
     if (!isPlayModeVisible()) return;
