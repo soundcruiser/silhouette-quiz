@@ -2,12 +2,12 @@
   "version": 12,
   "speeds": [
     "0.5",
-    "0.5",
-    "0.5"
+    "1",
+    "1.5"
   ],
   "countdown": {
-    "enabled": false,
-    "seconds": "1"
+    "enabled": true,
+    "seconds": "3"
   },
   "showTitle": {
     "main": "SILHOUETTE QUIZ",
@@ -117,37 +117,6 @@
   },
   "setlist": [
     {
-      "folder": "アニメ",
-      "displayName": "アニメ",
-      "color": "#00e5ff",
-      "mode": "slide",
-      "questions": [
-        {
-          "name": "4.png",
-          "fullPath": "アニメ/4.png",
-          "isColor": false
-        },
-        {
-          "name": "4のコピー.png",
-          "fullPath": "アニメ/4のコピー.png",
-          "isColor": false
-        }
-      ]
-    },
-    {
-      "folder": "ロゴ",
-      "displayName": "ロゴ",
-      "color": "#ffe42d",
-      "mode": "slide",
-      "questions": [
-        {
-          "name": "7.png",
-          "fullPath": "ロゴ/7.png",
-          "isColor": false
-        }
-      ]
-    },
-    {
       "folder": "乗り物",
       "displayName": "乗り物",
       "color": "#8aff2d",
@@ -156,32 +125,6 @@
         {
           "name": "1.png",
           "fullPath": "乗り物/1.png",
-          "isColor": false
-        }
-      ]
-    },
-    {
-      "folder": "野菜",
-      "displayName": "野菜",
-      "color": "#ff8a2d",
-      "mode": "slide",
-      "questions": [
-        {
-          "name": "7.png",
-          "fullPath": "野菜/7.png",
-          "isColor": false
-        }
-      ]
-    },
-    {
-      "folder": "スポーツ",
-      "displayName": "スポーツ",
-      "color": "#ff2d8a",
-      "mode": "slide",
-      "questions": [
-        {
-          "name": "“Gemini_Generated_Image_kelvbhkelvbhkelv”の背景が削除されました.png",
-          "fullPath": "スポーツ/“Gemini_Generated_Image_kelvbhkelvbhkelv”の背景が削除されました.png",
           "isColor": false
         }
       ]
