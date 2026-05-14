@@ -15,7 +15,7 @@
   },
   "thinkingTime": {
     "message": "thinkingTime",
-    "seEnabled": false
+    "seEnabled": true
   },
   "floatingShapes": {
     "opening": [
