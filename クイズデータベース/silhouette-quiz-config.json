@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "speeds": [
     "0.5",
     "1",
@@ -7,7 +7,7 @@
   ],
   "countdown": {
     "enabled": true,
-    "seconds": "3"
+    "seconds": "1"
   },
   "showTitle": {
     "main": "SILHOUETTE QUIZ",
@@ -15,7 +15,8 @@
   },
   "thinkingTime": {
     "message": "thinkingTime",
-    "seEnabled": true
+    "seEnabled": true,
+    "guideSeconds": "30"
   },
   "floatingShapes": {
     "opening": [
@@ -117,15 +118,182 @@
   },
   "setlist": [
     {
-      "folder": "乗り物",
-      "displayName": "乗り物",
-      "color": "#8aff2d",
+      "folder": "スポーツ",
+      "displayName": "スポーツ",
+      "color": "#00e5ff",
       "mode": "slide",
       "questions": [
         {
           "name": "1.png",
-          "fullPath": "乗り物/1.png",
+          "fullPath": "スポーツ/1.png",
           "isColor": false
+        },
+        {
+          "name": "2.png",
+          "fullPath": "スポーツ/2.png",
+          "isColor": false
+        },
+        {
+          "name": "7.png",
+          "fullPath": "スポーツ/7.png",
+          "isColor": false
+        },
+        {
+          "name": "17.png",
+          "fullPath": "スポーツ/17.png",
+          "isColor": false
+        }
+      ]
+    },
+    {
+      "folder": "動物",
+      "displayName": "動物",
+      "color": "#ff8a2d",
+      "mode": "slide",
+      "questions": [
+        {
+          "name": "8.png",
+          "fullPath": "動物/8.png",
+          "isColor": false
+        },
+        {
+          "name": "9.png",
+          "fullPath": "動物/9.png",
+          "isColor": false
+        },
+        {
+          "name": "11.png",
+          "fullPath": "動物/11.png",
+          "isColor": false
+        },
+        {
+          "name": "13.png",
+          "fullPath": "動物/13.png",
+          "isColor": false
+        },
+        {
+          "name": "15.png",
+          "fullPath": "動物/15.png",
+          "isColor": false
+        },
+        {
+          "name": "19.png",
+          "fullPath": "動物/19.png",
+          "isColor": false
+        }
+      ]
+    },
+    {
+      "folder": "食べ物",
+      "displayName": "食べ物",
+      "color": "#ff2d8a",
+      "mode": "slide",
+      "questions": [
+        {
+          "name": "4.png",
+          "fullPath": "食べ物/4.png",
+          "isColor": false
+        },
+        {
+          "name": "5.png",
+          "fullPath": "食べ物/5.png",
+          "isColor": false
+        },
+        {
+          "name": "6.png",
+          "fullPath": "食べ物/6.png",
+          "isColor": false
+        },
+        {
+          "name": "16.png",
+          "fullPath": "食べ物/16.png",
+          "isColor": false
+        },
+        {
+          "name": "20.png",
+          "fullPath": "食べ物/20.png",
+          "isColor": false
+        },
+        {
+          "name": "21.png",
+          "fullPath": "食べ物/21.png",
+          "isColor": false
+        },
+        {
+          "name": "1778588593077.png",
+          "fullPath": "食べ物/1778588593077.png",
+          "isColor": false
+        },
+        {
+          "name": "1778588769722.png",
+          "fullPath": "食べ物/1778588769722.png",
+          "isColor": false
+        },
+        {
+          "name": "1778588855859.png",
+          "fullPath": "食べ物/1778588855859.png",
+          "isColor": false
+        }
+      ]
+    },
+    {
+      "folder": "乗り物",
+      "displayName": "乗り物",
+      "color": "#8aff2d",
+      "mode": "static",
+      "questions": [
+        {
+          "name": "3.png",
+          "fullPath": "乗り物/3.png",
+          "isColor": true
+        },
+        {
+          "name": "18.png",
+          "fullPath": "乗り物/18.png",
+          "isColor": true
+        },
+        {
+          "name": "1778588284038.png",
+          "fullPath": "乗り物/1778588284038.png",
+          "isColor": true
+        }
+      ]
+    },
+    {
+      "folder": "キャラ",
+      "displayName": "キャラ",
+      "color": "#ff2d8a",
+      "mode": "static",
+      "questions": [
+        {
+          "name": "キャラ１.png",
+          "fullPath": "キャラ/キャラ１.png",
+          "isColor": true
+        },
+        {
+          "name": "キャラ２.png",
+          "fullPath": "キャラ/キャラ２.png",
+          "isColor": true
+        },
+        {
+          "name": "キャラ３.png",
+          "fullPath": "キャラ/キャラ３.png",
+          "isColor": true
+        },
+        {
+          "name": "キャラ４.png",
+          "fullPath": "キャラ/キャラ４.png",
+          "isColor": true
+        },
+        {
+          "name": "キャラ5.png",
+          "fullPath": "キャラ/キャラ5.png",
+          "isColor": true
+        },
+        {
+          "name": "キャラ６.png",
+          "fullPath": "キャラ/キャラ６.png",
+          "isColor": true
         }
       ]
     }
