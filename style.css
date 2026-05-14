@@ -2031,7 +2031,7 @@ input.fs-cell:focus {
    opacity: 存在感（0.1=控えめ, 0.2=普通, 0.3=しっかり見える）
    text-shadow: ネオン光の広がり（20px=軽め, 40px=派手）
    translateY: 上下の揺れ幅（24px）
-   ※数量・文字サイズ等はscript.jsのrenderOpening()も参照 */
+   ※数量・文字サイズ等は js/uiPlay.js のオープニング描画も参照 */
 .show-float-tag {
     position: absolute;
     font-weight: 800;

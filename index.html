@@ -11,19 +11,20 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script type="module" src="./js/main.js"></script>
 </head>
 <body>
 
 <nav>
     <div class="nav-left">
-        <button class="mode-btn active" id="nav-config" onclick="switchMode('config')">⚙ CONFIG</button>
-        <button class="mode-btn" id="nav-play" onclick="switchMode('play')">▶ PLAY</button>
+        <button class="mode-btn active" id="nav-config" data-action="switchMode" data-mode="config">⚙ CONFIG</button>
+        <button class="mode-btn" id="nav-play" data-action="switchMode" data-mode="play">▶ PLAY</button>
     </div>
     <div class="nav-right" id="nav-actions">
-        <button class="mode-btn folder-btn" onclick="requestDirectoryAccess()">📁 フォルダ接続</button>
-        <button class="mode-btn save-btn" onclick="saveConfig()">💾 保存</button>
-        <button class="mode-btn load-btn" type="button" onclick="openLoadConfigModal()">📂 読込</button>
-        <button class="mode-btn" onclick="toggleHelp()" title="ショートカット一覧">❓</button>
+        <button class="mode-btn folder-btn" data-action="requestDirectoryAccess">📁 フォルダ接続</button>
+        <button class="mode-btn save-btn" data-action="saveConfig">💾 保存</button>
+        <button class="mode-btn load-btn" type="button" data-action="openLoadConfigModal">📂 読込</button>
+        <button class="mode-btn" data-action="toggleHelp" title="ショートカット一覧">❓</button>
     </div>
 </nav>
 
@@ -37,7 +38,7 @@
         </div>
         <div class="speed-group">
             <label class="toggle-label">
-                <input type="checkbox" id="countdown-toggle" checked onchange="toggleCountdownInput()">
+                <input type="checkbox" id="countdown-toggle" checked data-change="toggleCountdownInput">
                 <span class="panel-label">カウントダウン</span>
             </label>
             <input type="number" id="countdown-sec" value="3" class="speed-input" min="1" max="10" step="1">
@@ -66,42 +67,15 @@
                             <span class="floating-shapes-row-label">オープニング</span>
                         </label>
                         <div class="floating-shapes-cells">
-                            <input type="text" class="fs-cell" id="fs-opening-0" maxlength="8" value="?" autocomplete="off" title="シェイプ1"><input type="text" class="fs-cell" id="fs-opening-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-7" maxlength="8" value="◆" autocomplete="off">
+                            <input type="text" class="fs-cell" id="fs-opening-0" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-opening-7" maxlength="8" value="◆" autocomplete="off">
                         </div>
                     </div>
-                    <div class="floating-shapes-row">
-                        <label class="floating-shapes-vis-wrap" title="このシーンで浮遊シェイプを表示">
-                            <input type="checkbox" class="fs-vis" id="fs-vis-category" checked>
-                            <span class="floating-shapes-row-label">カテゴリ</span>
-                        </label>
-                        <div class="floating-shapes-cells">
-                            <input type="text" class="fs-cell" id="fs-category-0" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-category-7" maxlength="8" value="◆" autocomplete="off">
-                        </div>
                     </div>
-                    <div class="floating-shapes-row">
-                        <label class="floating-shapes-vis-wrap" title="このシーンで浮遊シェイプを表示">
-                            <input type="checkbox" class="fs-vis" id="fs-vis-ending" checked>
-                            <span class="floating-shapes-row-label">エンディング</span>
-                        </label>
-                        <div class="floating-shapes-cells">
-                            <input type="text" class="fs-cell" id="fs-ending-0" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-ending-7" maxlength="8" value="◆" autocomplete="off">
-                        </div>
-                    </div>
-                    <div class="floating-shapes-row">
-                        <label class="floating-shapes-vis-wrap" title="このシーンで浮遊シェイプを表示">
-                            <input type="checkbox" class="fs-vis" id="fs-vis-thinking" checked>
-                            <span class="floating-shapes-row-label">考え中</span>
-                        </label>
-                        <div class="floating-shapes-cells">
-                            <input type="text" class="fs-cell" id="fs-thinking-0" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-1" maxlength="8" value="!" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-2" maxlength="8" value="★" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-3" maxlength="8" value="?" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-4" maxlength="8" value="●" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-5" maxlength="8" value="▲" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-6" maxlength="8" value="＋" autocomplete="off"><input type="text" class="fs-cell" id="fs-thinking-7" maxlength="8" value="◆" autocomplete="off">
-                        </div>
-                    </div>
-                </div>
             </details>
         </div>
         <div class="bulk-group">
-            <button class="small-btn" onclick="bulkColor(true)">すべてカラー</button>
-            <button class="small-btn" onclick="bulkColor(false)">すべてシルエット</button>
+            <button class="small-btn" data-action="bulkColor" data-value="true">すべてカラー</button>
+            <button class="small-btn" data-action="bulkColor" data-value="false">すべてシルエット</button>
         </div>
         <div class="title-group">
             <span class="panel-label">タイトル</span>
@@ -111,7 +85,6 @@
         <div id="file-status">フォルダ未接続</div>
     </div>
 
-    <!-- Sound Settings (折りたたみ) -->
     <div class="sound-section">
         <div class="sound-section-collapsible-head">
             <details class="sound-details">
@@ -120,141 +93,49 @@
                     <span class="sound-chevron" aria-hidden="true"></span>
                 </summary>
                 <div class="sound-slots">
-            <div class="sound-slot" data-slot="bgm">
-                <span class="sound-label">🎵 BGM</span>
-                <span class="sound-file-name" id="sound-name-bgm">未設定</span>
-                <input type="range" class="sound-volume" id="sound-vol-bgm" min="0" max="100" value="30" oninput="updateVolume('bgm', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-bgm">30</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('bgm', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-bgm" onclick="testSound('bgm')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('bgm')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="start1">
-                <span class="sound-label">⚡ 爆速</span>
-                <span class="sound-file-name" id="sound-name-start1">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-start1" min="0" max="100" value="50" oninput="updateVolume('start1', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-start1">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('start1', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-start1" onclick="testSound('start1')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('start1')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="start2">
-                <span class="sound-label">⏩ 中速</span>
-                <span class="sound-file-name" id="sound-name-start2">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-start2" min="0" max="100" value="50" oninput="updateVolume('start2', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-start2">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('start2', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-start2" onclick="testSound('start2')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('start2')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="start3">
-                <span class="sound-label">🐢 低速</span>
-                <span class="sound-file-name" id="sound-name-start3">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-start3" min="0" max="100" value="50" oninput="updateVolume('start3', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-start3">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('start3', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-start3" onclick="testSound('start3')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('start3')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="reveal">
-                <span class="sound-label">🎉 正解</span>
-                <span class="sound-file-name" id="sound-name-reveal">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-reveal" min="0" max="100" value="50" oninput="updateVolume('reveal', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-reveal">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('reveal', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-reveal" onclick="testSound('reveal')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('reveal')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="countdown">
-                <span class="sound-label">⏱ CD</span>
-                <span class="sound-file-name" id="sound-name-countdown">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-countdown" min="0" max="100" value="50" oninput="updateVolume('countdown', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-countdown">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('countdown', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-countdown" onclick="testSound('countdown')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('countdown')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="thinkingLoop">
-                <span class="sound-label">💭 考え中ループ</span>
-                <span class="sound-file-name" id="sound-name-thinkingLoop">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-thinkingLoop" min="0" max="100" value="35" oninput="updateVolume('thinkingLoop', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-thinkingLoop">35</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('thinkingLoop', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-thinkingLoop" onclick="testSound('thinkingLoop')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('thinkingLoop')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="opening">
-                <span class="sound-label">🎬 オープニング</span>
-                <span class="sound-file-name" id="sound-name-opening">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-opening" min="0" max="100" value="50" oninput="updateVolume('opening', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-opening">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('opening', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-opening" onclick="testSound('opening')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('opening')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="category">
-                <span class="sound-label">📂 カテゴリ</span>
-                <span class="sound-file-name" id="sound-name-category">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-category" min="0" max="100" value="50" oninput="updateVolume('category', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-category">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('category', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-category" onclick="testSound('category')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('category')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="qIntro">
-                <span class="sound-label">❓ Q表示</span>
-                <span class="sound-file-name" id="sound-name-qIntro">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-qIntro" min="0" max="100" value="50" oninput="updateVolume('qIntro', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-qIntro">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('qIntro', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-qIntro" onclick="testSound('qIntro')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('qIntro')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="qAfter">
-                <span class="sound-label">🖼 Q後（画像）</span>
-                <span class="sound-file-name" id="sound-name-qAfter">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-qAfter" min="0" max="100" value="50" oninput="updateVolume('qAfter', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-qAfter">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('qAfter', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-qAfter" onclick="testSound('qAfter')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('qAfter')">✕</button>
-            </div>
-            <div class="sound-slot" data-slot="ending">
-                <span class="sound-label">🏁 エンディング</span>
-                <span class="sound-file-name" id="sound-name-ending">デフォルト</span>
-                <input type="range" class="sound-volume" id="sound-vol-ending" min="0" max="100" value="50" oninput="updateVolume('ending', this.value)">
-                <span class="sound-vol-label" id="sound-vol-label-ending">50</span>
-                <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" onchange="loadCustomSound('ending', this)" hidden></label>
-                <button class="small-btn sound-test-btn" id="sound-test-ending" onclick="testSound('ending')">▶</button>
-                <button class="small-btn sound-clear-btn" onclick="clearCustomSound('ending')">✕</button>
-            </div>
-                </div>
+                    <div class="sound-slot" data-slot="bgm">
+                        <span class="sound-label">🎵 BGM</span>
+                        <span class="sound-file-name" id="sound-name-bgm">未設定</span>
+                        <input type="range" class="sound-volume" id="sound-vol-bgm" min="0" max="100" value="30" data-input="updateVolume" data-slot="bgm">
+                        <span class="sound-vol-label" id="sound-vol-label-bgm">30</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="bgm" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-bgm" data-action="testSound" data-slot="bgm">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="bgm">✕</button>
+                    </div>
+                    <div class="sound-slot" data-slot="start1">
+                        <span class="sound-label">⚡ 爆速</span>
+                        <span class="sound-file-name" id="sound-name-start1">デフォルト</span>
+                        <input type="range" class="sound-volume" id="sound-vol-start1" min="0" max="100" value="50" data-input="updateVolume" data-slot="start1">
+                        <span class="sound-vol-label" id="sound-vol-label-start1">50</span>
+                        <label class="small-btn sound-pick-btn">選択<input type="file" accept="audio/*" data-change="loadCustomSound" data-slot="start1" hidden></label>
+                        <button class="small-btn sound-test-btn" id="sound-test-start1" data-action="testSound" data-slot="start1">▶</button>
+                        <button class="small-btn sound-clear-btn" data-action="clearCustomSound" data-slot="start1">✕</button>
+                    </div>
+                    </div>
             </details>
-            <button type="button" class="small-btn sound-stop-all-btn sound-stop-all-outer" id="sound-stop-all" onclick="stopAllPreviews()">■ 停止</button>
+            <button type="button" class="small-btn sound-stop-all-btn sound-stop-all-outer" id="sound-stop-all" data-action="stopAllPreviews">■ 停止</button>
         </div>
     </div>
 
-    <!-- Remote Control -->
     <div class="remote-section">
         <div class="remote-header">
             <h3 class="setlist-title">📱 リモコン</h3>
             <span class="remote-status" id="remote-status">未接続</span>
         </div>
         <div class="remote-body">
-            <button class="small-btn" id="remote-start-btn" onclick="initRemote()">接続を開始</button>
+            <button class="small-btn" id="remote-start-btn" data-action="initRemote">接続を開始</button>
             <div id="remote-qr" class="remote-qr hidden"></div>
             <p class="remote-note hidden" id="remote-note"></p>
         </div>
     </div>
 
-    <!-- Setlist Area -->
     <div class="setlist-section">
         <div class="setlist-header">
             <h3 class="setlist-title">セットリスト</h3>
             <div class="setlist-header-actions">
-                <button class="small-btn mode-bulk-btn" onclick="setAllModes('slide')" title="全カテゴリをスライドに">🎬 全スライド</button>
-                <button class="small-btn mode-bulk-btn" onclick="setAllModes('static')" title="全カテゴリをじっくりに">🔍 全じっくり</button>
-                <button class="small-btn" onclick="addAllFoldersToSetlist()">全カテゴリ追加</button>
+                <button class="small-btn mode-bulk-btn" data-action="setAllModes" data-mode="slide" title="全カテゴリをスライドに">🎬 全スライド</button>
+                <button class="small-btn mode-bulk-btn" data-action="setAllModes" data-mode="static" title="全カテゴリをじっくりに">🔍 全じっくり</button>
+                <button class="small-btn" data-action="addAllFoldersToSetlist">全カテゴリ追加</button>
             </div>
         </div>
         <div id="setlist-container" class="setlist-container">
@@ -262,14 +143,13 @@
         </div>
     </div>
 
-    <!-- Category Detail (per-category question grid) -->
     <div id="category-detail" class="category-detail" style="display:none;">
         <div class="category-detail-header">
-            <button class="small-btn" onclick="closeCategoryDetail()">← セットリストに戻る</button>
+            <button class="small-btn" data-action="closeCategoryDetail">← セットリストに戻る</button>
             <span class="category-detail-name" id="category-detail-name"></span>
             <div class="bulk-group">
-                <button class="small-btn" onclick="bulkColor(true)">すべてカラー</button>
-                <button class="small-btn" onclick="bulkColor(false)">すべてシルエット</button>
+                <button class="small-btn" data-action="bulkColor" data-value="true">すべてカラー</button>
+                <button class="small-btn" data-action="bulkColor" data-value="false">すべてシルエット</button>
             </div>
         </div>
         <div id="grid" class="grid-container"></div>
@@ -294,107 +174,51 @@
                     <span class="countdown-number" id="countdown-number"></span>
                 </div>
                 <div class="show-overlay" id="show-overlay"></div>
-                <div class="thinking-overlay" id="thinking-overlay" aria-hidden="true">
-                    <div class="thinking-scanlines" aria-hidden="true"></div>
-                    <div class="thinking-noise" aria-hidden="true"></div>
-                    <div class="thinking-dots" aria-hidden="true"></div>
-                    <div class="thinking-beam" aria-hidden="true"></div>
-                    <div class="thinking-shapes" id="thinking-shapes-root" aria-hidden="true"></div>
-                    <div class="thinking-guide-timer hidden" id="thinking-guide-timer" aria-hidden="true">
-                        <svg class="thinking-guide-svg" viewBox="0 0 100 100" aria-hidden="true">
-                            <circle class="thinking-guide-track" cx="50" cy="50" r="43" fill="none" />
-                            <circle class="thinking-guide-progress" id="thinking-guide-ring" cx="50" cy="50" r="43" fill="none" transform="rotate(-90 50 50)" />
-                        </svg>
-                        <div class="thinking-guide-face">
-                            <span class="thinking-guide-num" id="thinking-guide-num">0</span>
-                            <span class="thinking-guide-unit">SEC</span>
-                            <div class="thinking-guide-past" id="thinking-guide-past" hidden>
-                                <span class="thinking-guide-past-main">目安終了</span>
-                                <span class="thinking-guide-past-sub">GUIDE END</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="thinking-stage">
-                        <div class="thinking-title" aria-label="THINKING WAIT">
-                            <span class="tt-line tt-line-1">
-                                <span class="tt-char" style="--i:0">T</span><span class="tt-char" style="--i:1">H</span><span class="tt-char" style="--i:2">I</span><span class="tt-char" style="--i:3">N</span><span class="tt-char" style="--i:4">K</span><span class="tt-char" style="--i:5">I</span><span class="tt-char" style="--i:6">N</span><span class="tt-char" style="--i:7">G</span>
-                            </span>
-                            <span class="tt-line tt-line-2">
-                                <span class="tt-char" style="--i:0">W</span><span class="tt-char" style="--i:1">A</span><span class="tt-char" style="--i:2">I</span><span class="tt-char" style="--i:3">T</span>
-                            </span>
-                        </div>
-                        <p class="thinking-main" id="thinking-main-text"></p>
-                        <div class="thinking-loading-dots" aria-hidden="true">
-                            <span></span><span></span><span></span>
-                        </div>
-                    </div>
                 </div>
-            </div>
         </div>
         <div class="play-bottom">
             <div class="play-controls" id="quiz-controls">
-                <button type="button" class="btn-play btn-nav" onclick="prevQuiz()">◀</button>
-                <button type="button" class="btn-play btn-speed" onclick="startAnim(1)">爆速 (1)</button>
-                <button type="button" class="btn-play btn-speed" onclick="startAnim(2)">中速 (2)</button>
-                <button type="button" class="btn-play btn-speed" onclick="startAnim(3)">低速 (3)</button>
-                <button type="button" class="btn-play btn-pause" id="btn-pause" onclick="togglePause()">⏸</button>
-                <button type="button" class="btn-play btn-replay" onclick="replayAnim()">↻</button>
-                <button type="button" class="btn-play btn-reveal" onclick="reveal()">★ 正解</button>
-                <button type="button" class="btn-play btn-nav" onclick="nextQuiz()">▶</button>
+                <button type="button" class="btn-play btn-nav" data-action="prevQuiz">◀</button>
+                <button type="button" class="btn-play btn-speed" data-action="startAnim" data-speed="1">爆速 (1)</button>
+                <button type="button" class="btn-play btn-speed" data-action="startAnim" data-speed="2">中速 (2)</button>
+                <button type="button" class="btn-play btn-speed" data-action="startAnim" data-speed="3">低速 (3)</button>
+                <button type="button" class="btn-play btn-pause" id="btn-pause" data-action="togglePause">⏸</button>
+                <button type="button" class="btn-play btn-replay" data-action="replayAnim">↻</button>
+                <button type="button" class="btn-play btn-reveal" data-action="reveal">★ 正解</button>
+                <button type="button" class="btn-play btn-nav" data-action="nextQuiz">▶</button>
             </div>
             <div class="show-controls" id="show-controls" style="display:none;">
-                <button type="button" class="btn-play btn-show-advance" id="btn-show-advance" onclick="advanceShow()">START</button>
+                <button type="button" class="btn-play btn-show-advance" id="btn-show-advance" data-action="advanceShow">START</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 読込フロー: フォルダ選択 → バンドル自動読込 or JSON 選択 -->
-<div id="load-config-modal" class="load-config-modal" onclick="if (event.target === this) closeLoadConfigModal()">
-    <div class="load-modal-box" onclick="event.stopPropagation()">
+<div id="load-config-modal" class="load-config-modal" data-action="closeModalOutside">
+    <div class="load-modal-box">
         <h2 class="load-modal-title">📂 読込</h2>
         <div id="load-modal-step1">
             <p class="load-modal-text">イベント用のフォルダを選んでください。</p>
-            <p class="load-modal-hint">保存時にフォルダへ書き出した <strong>silhouette-quiz-config.json</strong> と <strong>_sounds/</strong> を含むフォルダを指定すると、設定・画像・音をまとめて読み込みます。</p>
             <div class="load-modal-actions">
-                <button type="button" class="mode-btn" onclick="loadModalPickFolder()">選択</button>
-                <button type="button" class="small-btn" onclick="closeLoadConfigModal()">閉じる</button>
+                <button type="button" class="mode-btn" data-action="loadModalPickFolder">選択</button>
+                <button type="button" class="small-btn" data-action="closeLoadConfigModal">閉じる</button>
             </div>
         </div>
         <div id="load-modal-step2" class="hidden">
             <p class="load-modal-text">このフォルダに <strong>silhouette-quiz-config.json</strong> がありません。別名の JSON を選んでください。</p>
             <div class="load-modal-actions">
-                <button type="button" class="mode-btn" onclick="document.getElementById('load-modal-json').click()">JSON を選択</button>
-                <input type="file" id="load-modal-json" accept=".json" class="hidden" onchange="loadConfigFromModalJson(this)">
-                <button type="button" class="small-btn" onclick="closeLoadConfigModal()">閉じる</button>
+                <button type="button" class="mode-btn" data-action="triggerJsonSelect">JSON を選択</button>
+                <input type="file" id="load-modal-json" accept=".json" class="hidden" data-change="loadConfigFromModalJson">
+                <button type="button" class="small-btn" data-action="closeLoadConfigModal">閉じる</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Help Overlay -->
-<div class="help-overlay" id="help-overlay" onclick="toggleHelp()">
-    <div class="help-box" onclick="event.stopPropagation()">
-        <h2>⌨ キーボードショートカット</h2>
-        <h3 class="help-section-title">ショー画面 (Opening / Category / Ending)</h3>
-        <div class="shortcut-row"><span>次へ進む</span><kbd>Space</kbd> / <kbd>Enter</kbd></div>
-        <h3 class="help-section-title">クイズ画面 — 待機中</h3>
-        <div class="shortcut-row"><span>正解を表示</span><kbd>Space</kbd></div>
-        <div class="shortcut-row"><span>爆速 / 中速 / 低速</span><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></div>
-        <div class="shortcut-row"><span>前の問題</span><kbd>←</kbd></div>
-        <div class="shortcut-row"><span>次の問題</span><kbd>→</kbd></div>
-        <div class="shortcut-row"><span>リプレイ</span><kbd>R</kbd></div>
-        <h3 class="help-section-title">クイズ画面 — 再生中</h3>
-        <div class="shortcut-row"><span>正解を表示（停止して解答）</span><kbd>Space</kbd></div>
-        <div class="shortcut-row"><span>一時停止 / 再開</span><kbd>P</kbd></div>
-        <h3 class="help-section-title">共通</h3>
-        <div class="shortcut-row"><span>スキップ / キャンセル</span><kbd>Esc</kbd></div>
-        <div class="shortcut-row"><span>フルスクリーン</span><kbd>F</kbd></div>
-        <div class="shortcut-row"><span>ヘルプ表示</span><kbd>H</kbd> / <kbd>?</kbd></div>
-        <p class="help-note">※ カウントダウン中・スライド再生中は ←→ 1 2 3 無効<br>※ じっくりモードでは 1 2 3 P R 無効（正解と←→のみ）<br>※ スライド終了後の「考え中」表示は 1 2 3 / 正解 / ←→ / Esc で抜けられます<br>※ 考え中の円形ガイドは目安のみ（終了後も自動では抜けません）</p>
-    </div>
+<div class="help-overlay" id="help-overlay" data-action="toggleHelp">
+    <div class="help-box" data-action="stopPropagation">
+        </div>
 </div>
 
-<script src="script.js"></script>
 </body>
 </html>

@@ -30,13 +30,28 @@
 ```
 ├── index.html       メイン画面（CONFIG / PLAY）
 ├── style.css        スタイルシート
-├── script.js        アプリケーションロジック
+├── js/              アプリロジック（ES Modules）
+│   ├── main.js      エントリ・イベント委譲
+│   ├── state.js
+│   ├── constants.js
+│   ├── utils.js
+│   ├── fileSystem.js
+│   ├── audio.js
+│   ├── soundUi.js
+│   ├── remoteSync.js
+│   ├── remote.js
+│   ├── uiConfig.js
+│   └── uiPlay.js
 ├── remote.html      スマートフォン用リモコン画面
 ├── manifest.json    PWA マニフェスト
 └── icons/
     ├── icon-192.png
     └── icon-512.png
 ```
+
+### ローカルで ES Modules を試すとき
+
+`index.html` は `type="module"` で `./js/main.js` を読み込みます。`file://` 直開きでは環境によってモジュールがブロックされることがあるため、`npx serve .` や VS Code の Live Server など**静的ファイル用のローカル HTTP サーバー**で開いてください。
 
 ---
 
