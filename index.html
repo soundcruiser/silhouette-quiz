@@ -49,6 +49,10 @@
                 <input type="checkbox" id="thinking-se-enabled" checked>
                 <span class="panel-label">考え中ループSE（無音の埋め）</span>
             </label>
+            <div class="thinking-guide-config-row">
+                <span class="panel-label">考え中ガイド（秒）</span>
+                <input type="number" id="thinking-guide-sec" value="30" class="speed-input thinking-guide-sec-input" min="0" max="600" step="1" title="0 で非表示。目安のみで自動では抜けません。">
+            </div>
             <details class="floating-shapes-details">
                 <summary class="floating-shapes-summary">
                     <span>✨ 浮遊シェイプ（ショー別・各8マス）</span>
@@ -296,6 +300,20 @@
                     <div class="thinking-dots" aria-hidden="true"></div>
                     <div class="thinking-beam" aria-hidden="true"></div>
                     <div class="thinking-shapes" id="thinking-shapes-root" aria-hidden="true"></div>
+                    <div class="thinking-guide-timer hidden" id="thinking-guide-timer" aria-hidden="true">
+                        <svg class="thinking-guide-svg" viewBox="0 0 100 100" aria-hidden="true">
+                            <circle class="thinking-guide-track" cx="50" cy="50" r="43" fill="none" />
+                            <circle class="thinking-guide-progress" id="thinking-guide-ring" cx="50" cy="50" r="43" fill="none" transform="rotate(-90 50 50)" />
+                        </svg>
+                        <div class="thinking-guide-face">
+                            <span class="thinking-guide-num" id="thinking-guide-num">0</span>
+                            <span class="thinking-guide-unit">SEC</span>
+                            <div class="thinking-guide-past" id="thinking-guide-past" hidden>
+                                <span class="thinking-guide-past-main">目安終了</span>
+                                <span class="thinking-guide-past-sub">GUIDE END</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="thinking-stage">
                         <div class="thinking-title" aria-label="THINKING WAIT">
                             <span class="tt-line tt-line-1">
@@ -373,7 +391,7 @@
         <div class="shortcut-row"><span>スキップ / キャンセル</span><kbd>Esc</kbd></div>
         <div class="shortcut-row"><span>フルスクリーン</span><kbd>F</kbd></div>
         <div class="shortcut-row"><span>ヘルプ表示</span><kbd>H</kbd> / <kbd>?</kbd></div>
-        <p class="help-note">※ カウントダウン中・スライド再生中は ←→ 1 2 3 無効<br>※ じっくりモードでは 1 2 3 P R 無効（正解と←→のみ）<br>※ スライド終了後の「考え中」表示は 1 2 3 / 正解 / ←→ / Esc で抜けられます</p>
+        <p class="help-note">※ カウントダウン中・スライド再生中は ←→ 1 2 3 無効<br>※ じっくりモードでは 1 2 3 P R 無効（正解と←→のみ）<br>※ スライド終了後の「考え中」表示は 1 2 3 / 正解 / ←→ / Esc で抜けられます<br>※ 考え中の円形ガイドは目安のみ（終了後も自動では抜けません）</p>
     </div>
 </div>
 

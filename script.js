@@ -11,6 +11,11 @@ let thinkingOverlayVisible = false;
 let thinkingLoopAudioEl = null;
 let thinkingLoopIntervalId = null;
 let thinkingLoopPreviewTimer = null;
+/** 考え中オーバーレイの「目安」ガイド秒数（0 到達後も手動と同じく待機） */
+let thinkingGuideIntervalId = null;
+let thinkingGuideRingLen = 0;
+let thinkingGuideTotalSec = 0;
+let thinkingGuideRemaining = 0;
 /** BGM 線形フェードの打ち消し用（新しいフェードや即時同期で世代を進める） */
 let bgmThinkingFadeGen = 0;
 let showPhase = 'opening'; // 'startup' | 'opening' | 'category' | 'quiz' | 'ending'
@@ -1409,6 +1414,101 @@ function syncThinkingOverlayMessage() {
     main.textContent = raw;
 }
 
+function getThinkingGuideSecondsFromForm() {
+    const el = document.getElementById('thinking-guide-sec');
+    const n = parseInt(String(el?.value ?? '0').trim(), 10);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.min(600, n);
+}
+
+function cacheThinkingGuideRingLength() {
+    const ring = document.getElementById('thinking-guide-ring');
+    if (!ring || typeof ring.getTotalLength !== 'function') return;
+    const len = ring.getTotalLength();
+    thinkingGuideRingLen = len > 0 ? len : 270;
+}
+
+function stopThinkingGuideTimer() {
+    if (thinkingGuideIntervalId != null) {
+        clearInterval(thinkingGuideIntervalId);
+        thinkingGuideIntervalId = null;
+    }
+}
+
+function resetThinkingGuideTimerWidget() {
+    stopThinkingGuideTimer();
+    thinkingGuideTotalSec = 0;
+    thinkingGuideRemaining = 0;
+    const wrap = document.getElementById('thinking-guide-timer');
+    if (wrap) {
+        wrap.classList.add('hidden');
+        wrap.classList.remove('thinking-guide-timer--expired');
+        wrap.setAttribute('aria-hidden', 'true');
+    }
+    const past = document.getElementById('thinking-guide-past');
+    if (past) past.setAttribute('hidden', '');
+}
+
+function updateThinkingGuideRingUI() {
+    const ring = document.getElementById('thinking-guide-ring');
+    const numEl = document.getElementById('thinking-guide-num');
+    const wrap = document.getElementById('thinking-guide-timer');
+    const past = document.getElementById('thinking-guide-past');
+    if (!ring || !numEl || !wrap) return;
+    const total = thinkingGuideTotalSec;
+    const rem = thinkingGuideRemaining;
+    numEl.textContent = String(Math.max(0, rem));
+    if (thinkingGuideRingLen <= 0) cacheThinkingGuideRingLength();
+    const len = thinkingGuideRingLen > 0 ? thinkingGuideRingLen : 270;
+    ring.style.strokeDasharray = String(len);
+    const frac = total > 0 ? Math.max(0, Math.min(1, rem / total)) : 0;
+    ring.style.strokeDashoffset = String(len * (1 - frac));
+    const expired = total > 0 && rem <= 0;
+    wrap.classList.toggle('thinking-guide-timer--expired', expired);
+    if (past) {
+        if (expired) past.removeAttribute('hidden');
+        else past.setAttribute('hidden', '');
+    }
+}
+
+function startThinkingGuideTimer() {
+    stopThinkingGuideTimer();
+    const sec = getThinkingGuideSecondsFromForm();
+    const wrap = document.getElementById('thinking-guide-timer');
+    const past = document.getElementById('thinking-guide-past');
+    if (!wrap) return;
+    if (sec <= 0) {
+        thinkingGuideTotalSec = 0;
+        thinkingGuideRemaining = 0;
+        wrap.classList.add('hidden');
+        wrap.classList.remove('thinking-guide-timer--expired');
+        wrap.setAttribute('aria-hidden', 'true');
+        if (past) past.setAttribute('hidden', '');
+        return;
+    }
+    thinkingGuideTotalSec = sec;
+    thinkingGuideRemaining = sec;
+    wrap.classList.remove('thinking-guide-timer--expired');
+    if (past) past.setAttribute('hidden', '');
+    wrap.classList.remove('hidden');
+    wrap.setAttribute('aria-hidden', 'false');
+    cacheThinkingGuideRingLength();
+    updateThinkingGuideRingUI();
+    thinkingGuideIntervalId = setInterval(() => {
+        if (!thinkingOverlayVisible) {
+            stopThinkingGuideTimer();
+            return;
+        }
+        if (thinkingGuideRemaining <= 0) {
+            stopThinkingGuideTimer();
+            return;
+        }
+        thinkingGuideRemaining -= 1;
+        updateThinkingGuideRingUI();
+        if (thinkingGuideRemaining <= 0) stopThinkingGuideTimer();
+    }, 1000);
+}
+
 async function showThinkingOverlay() {
     if (thinkingOverlayVisible) return;
     const overlay = document.getElementById('thinking-overlay');
@@ -1422,10 +1522,12 @@ async function showThinkingOverlay() {
         if (audioCtx.state === 'suspended') await audioCtx.resume();
     } catch (e) { /* ignore */ }
     startThinkingLoopSound();
+    startThinkingGuideTimer();
     sendRemoteState();
 }
 
 function hideThinkingOverlay() {
+    resetThinkingGuideTimerWidget();
     const overlay = document.getElementById('thinking-overlay');
     if (overlay) {
         overlay.classList.remove('visible');
@@ -1869,6 +1971,13 @@ async function applyConfigFromObject(config) {
             const ch = document.getElementById('thinking-se-enabled');
             if (ch) ch.checked = !!tt.seEnabled;
         }
+        if (tt.guideSeconds !== undefined) {
+            const g = document.getElementById('thinking-guide-sec');
+            if (g) {
+                const n = parseInt(String(tt.guideSeconds), 10);
+                g.value = String(Number.isFinite(n) ? Math.min(600, Math.max(0, n)) : 30);
+            }
+        }
     }
 
     if (config.floatingShapes) {
@@ -1996,7 +2105,7 @@ async function saveConfig() {
                     sounds[slot] = { file: packPaths[slot], volume: customSounds[slot].volume };
                 }
                 const config = {
-                    version: 12,
+                    version: 13,
                     speeds: [
                         document.getElementById('speed1').value,
                         document.getElementById('speed2').value,
@@ -2012,7 +2121,8 @@ async function saveConfig() {
                     },
                     thinkingTime: {
                         message: document.getElementById('thinking-time-text')?.value ?? 'thinkingTime',
-                        seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true
+                        seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true,
+                        guideSeconds: document.getElementById('thinking-guide-sec')?.value ?? '30'
                     },
                     floatingShapes: collectFloatingShapesForConfig(),
                     floatingShapesVisible: collectFloatingShapesVisibleForConfig(),
@@ -2040,7 +2150,7 @@ async function saveConfig() {
         sounds[slot] = { file: customSounds[slot].fileName, volume: customSounds[slot].volume };
     }
     downloadConfigJsonFile({
-        version: 12,
+        version: 13,
         speeds: [
             document.getElementById('speed1').value,
             document.getElementById('speed2').value,
@@ -2056,7 +2166,8 @@ async function saveConfig() {
         },
         thinkingTime: {
             message: document.getElementById('thinking-time-text')?.value ?? 'thinkingTime',
-            seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true
+            seEnabled: document.getElementById('thinking-se-enabled')?.checked ?? true,
+            guideSeconds: document.getElementById('thinking-guide-sec')?.value ?? '30'
         },
         floatingShapes: collectFloatingShapesForConfig(),
         floatingShapesVisible: collectFloatingShapesVisibleForConfig(),
