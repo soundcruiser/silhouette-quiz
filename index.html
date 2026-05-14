@@ -276,6 +276,39 @@
                 <div class="countdown-overlay" id="countdown-overlay">
                     <span class="countdown-number" id="countdown-number"></span>
                 </div>
+                <div id="thinking-overlay" class="thinking-overlay" aria-hidden="true">
+                    <div class="thinking-scanlines" aria-hidden="true"></div>
+                    <div class="thinking-noise" aria-hidden="true"></div>
+                    <div class="thinking-dots" aria-hidden="true"></div>
+                    <div class="thinking-beam" aria-hidden="true"></div>
+                    <div id="thinking-shapes-root" class="thinking-shapes" aria-hidden="true"></div>
+                    <div id="thinking-guide-timer" class="thinking-guide-timer hidden" aria-hidden="true">
+                        <svg class="thinking-guide-svg" viewBox="0 0 100 100" aria-hidden="true">
+                            <circle class="thinking-guide-track" cx="50" cy="50" r="40" fill="none"></circle>
+                            <circle id="thinking-guide-ring" class="thinking-guide-progress" cx="50" cy="50" r="40" fill="none" transform="rotate(-90 50 50)"></circle>
+                        </svg>
+                        <div class="thinking-guide-face">
+                            <span class="thinking-guide-num" id="thinking-guide-num"></span>
+                            <span class="thinking-guide-unit">SEC</span>
+                        </div>
+                        <div id="thinking-guide-past" class="thinking-guide-past" hidden>
+                            <span class="thinking-guide-past-main">OVER</span>
+                            <span class="thinking-guide-past-sub">目安を過ぎました</span>
+                        </div>
+                    </div>
+                    <div class="thinking-stage">
+                        <div class="thinking-title">
+                            <div class="tt-line tt-line-1">
+                                <span class="tt-char" style="--i:0">T</span><span class="tt-char" style="--i:1">H</span><span class="tt-char" style="--i:2">I</span><span class="tt-char" style="--i:3">N</span><span class="tt-char" style="--i:4">K</span><span class="tt-char" style="--i:5">I</span><span class="tt-char" style="--i:6">N</span><span class="tt-char" style="--i:7">G</span>
+                            </div>
+                            <div class="tt-line tt-line-2">
+                                <span class="tt-char" style="--i:0">W</span><span class="tt-char" style="--i:1">A</span><span class="tt-char" style="--i:2">I</span><span class="tt-char" style="--i:3">T</span>
+                            </div>
+                        </div>
+                        <p class="thinking-main" id="thinking-main-text"></p>
+                        <div class="thinking-loading-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                    </div>
+                </div>
                 <div class="show-overlay" id="show-overlay"></div>
                 </div>
         </div>
